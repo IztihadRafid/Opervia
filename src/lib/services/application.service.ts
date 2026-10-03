@@ -3,20 +3,28 @@ import Application from "../db/models/Application";
 interface GetApplicationsOptions {
   page?: number;
   limit?: number;
+  status?: "active" | "inactive" | "archived";
 }
 
 export async function getApplications(
   organizationId: string,
-  options: GetApplicationsOptions = {}
+  options: GetApplicationsOptions = {},
 ) {
   const page = Math.max(options.page ?? 1, 1);
   const limit = Math.min(Math.max(options.limit ?? 25, 1), 100);
 
   const skip = (page - 1) * limit;
 
-  const filter = {
+  const filter: {
+    organizationId: string;
+    status?: "active" | "inactive" | "archived";
+  } = {
     organizationId,
   };
+
+  if (options.status) {
+    filter.status = options.status;
+  }
 
   const [applications, total] = await Promise.all([
     Application.find(filter)
@@ -49,7 +57,7 @@ export async function createApplication(
     status?: "active" | "inactive" | "archived";
     owner?: string;
     usersCount?: number;
-  }
+  },
 ) {
   const application = await Application.create({
     organizationId,
