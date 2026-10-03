@@ -11,6 +11,10 @@ import {
 } from "@/lib/validations/application.validation";
 
 import { NextResponse } from "next/server";
+import {
+  ApplicationsResponse,
+  CreateApplicationResponse,
+} from "../../../../types/api";
 
 export async function GET(request: Request) {
   try {
@@ -33,18 +37,22 @@ export async function GET(request: Request) {
       );
     }
 
-    const { page, limit, status } = queryResult.data;
+    const { page, limit, status, search } = queryResult.data;
 
     const result = await getApplications("6ac0c5cc8e734b2c3c24d600", {
       page,
       limit,
       status,
+      search,
     });
 
-    return NextResponse.json({
+    const response: ApplicationsResponse = {
       success: true,
-      ...result,
-    });
+      applications: result.applications,
+      pagination: result.pagination,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Applications API error:", error);
 
@@ -82,13 +90,12 @@ export async function POST(request: Request) {
       result.data,
     );
 
-    return NextResponse.json(
-      {
-        success: true,
-        application,
-      },
-      { status: 201 },
-    );
+    const response: CreateApplicationResponse = {
+      success: true,
+      application,
+    };
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Create application API error:", error);
 
