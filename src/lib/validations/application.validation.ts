@@ -1,4 +1,5 @@
 import { z } from "zod";
+import Application from "../db/models/Application";
 
 export const createApplicationSchema = z.object({
   name: z.string().trim().min(2).max(150),
@@ -30,3 +31,20 @@ export const updateApplicationSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required for update",
   });
+export async function deleteApplication(
+  organizationId: string,
+  applicationId: string,
+) {
+  const application = await Application.findOneAndDelete({
+    _id: applicationId,
+    organizationId,
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  return {
+    _id: application._id.toString(),
+  };
+}
