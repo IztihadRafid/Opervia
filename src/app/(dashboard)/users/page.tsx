@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useUsers } from "@/hooks/use-users";
+import { User, useUsers } from "@/hooks/use-users";
 import { UsersTable } from "@/components/ui/users/users-table";
 import { UsersPagination } from "@/components/ui/users/users-pagination";
 import { UserForm } from "@/components/ui/users/userForm";
 import { CreateUserModal } from "@/components/ui/users/createUserModal";
+import { EditUserModal } from "@/components/ui/users/editUserModal";
+import { DeleteUserDialog } from "@/components/ui/users/deleteUserDialog";
 
 export default function UsersPage() {
   const [search, setSearch] = useState("");
@@ -17,6 +19,8 @@ export default function UsersPage() {
   );
   const [page, setPage] = useState(1);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const { data, isLoading, isError } = useUsers({
     page,
     search,
@@ -101,12 +105,21 @@ export default function UsersPage() {
         </select>
       </div>
 
-      <UsersTable users={data?.data ?? []} />
+      <UsersTable
+        users={data?.data ?? []}
+        onEditUser={(user) => setEditingUser(user)}
+        onDeleteUser={(user) => setDeletingUser(user)}
+      />
 
       <UsersPagination
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}
+      />
+      <EditUserModal
+        user={editingUser}
+        open={editingUser !== null}
+        onClose={() => setEditingUser(null)}
       />
       <CreateUserModal
         open={isCreateUserOpen}
@@ -117,6 +130,11 @@ export default function UsersPage() {
           onCancel={() => setIsCreateUserOpen(false)}
         />
       </CreateUserModal>
+      <DeleteUserDialog
+        user={deletingUser}
+        open={deletingUser !== null}
+        onClose={() => setDeletingUser(null)}
+      />
     </div>
   );
 }

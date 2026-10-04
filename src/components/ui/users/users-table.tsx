@@ -1,12 +1,19 @@
 "use client";
 
 import type { User } from "@/hooks/use-users";
+import { UserActionsMenu } from "./userActionsMenu";
 
 interface UsersTableProps {
   users: User[];
+  onEditUser?: (user: User) => void;
+  onDeleteUser?: (user: User) => void;
 }
 
-export function UsersTable({ users }: UsersTableProps) {
+export function UsersTable({
+  users,
+  onEditUser,
+  onDeleteUser,
+}: UsersTableProps) {
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="overflow-x-auto">
@@ -48,12 +55,10 @@ export function UsersTable({ users }: UsersTableProps) {
                 </td>
 
                 <td className="px-6 py-4 text-right">
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Manage
-                  </button>
+                  <UserActionsMenu
+                    onEdit={() => onEditUser?.(user)}
+                    onDelete={() => onDeleteUser?.(user)}
+                  />
                 </td>
               </tr>
             ))}
