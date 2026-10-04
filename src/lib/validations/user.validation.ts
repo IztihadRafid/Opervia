@@ -14,3 +14,8 @@ export const createUserSchema = z.object({
   role: z.enum(["owner", "admin", "member", "viewer"]).default("member"),
   status: z.enum(["active", "invited", "suspended"]).default("active"),
 });
+export const updateUserSchema = createUserSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required for update",
+  });

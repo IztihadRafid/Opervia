@@ -95,3 +95,82 @@ export async function createUser(
     updatedAt: user.updatedAt.toISOString(),
   };
 }
+export async function updateUser(
+  organizationId: string,
+  userId: string,
+  data: {
+    name?: string;
+    email?: string;
+    role?: "owner" | "admin" | "member" | "viewer";
+    status?: "active" | "invited" | "suspended";
+  },
+) {
+  if (data.email) {
+    const existingUser = await User.findOne({
+      organizationId,
+      email: data.email,
+      _id: { $ne: userId },
+    });
+
+    if (existingUser) {
+      throw new Error("A user with this email already exists");
+    }
+  }
+
+  const user = await User.findOneAndUpdate(
+    {
+      _id: userId,
+      organizationId,
+    },
+    {
+      $set: data,
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  ).lean();
+
+  if (!user) {
+    return null;
+  }
+
+  return {
+    ...user,
+    _id: user._id.toString(),
+    organizationId: user.organizationId.toString(),
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+  };
+}
+export async function deleteUser(organizationId: string, userId: string) {
+  const user = await User.findOne({
+    _id: userId,
+    organizationId,
+  });
+
+  if (!user) {
+    return null;
+  }
+
+  if (user.role === "owner") {
+    const ownerCount = await User.countDocuments({
+      organizationId,
+      role: "owner",
+    });
+
+    if (ownerCount <= 1) {
+      throw new Error("Cannot delete the last owner of an organization");
+    }
+  }
+
+  await User.deleteOne({
+    _id: userId,
+    organizationId,
+  });
+
+  return {
+    _id: user._id.toString(),
+    organizationId: user.organizationId.toString(),
+  };
+}
