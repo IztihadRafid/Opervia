@@ -15,21 +15,48 @@ export async function GET(request: NextRequest) {
     const limit = Number(searchParams.get("limit") ?? 20);
 
     const statusParam = searchParams.get("status");
+
     const search = searchParams.get("search") ?? undefined;
+
     const roleParam = searchParams.get("role");
-    const role =
-      roleParam === "owner" ||
-      roleParam === "admin" ||
-      roleParam === "member" ||
-      roleParam === "viewer"
-        ? roleParam
-        : undefined;
-    const status =
-      statusParam === "active" ||
-      statusParam === "invited" ||
-      statusParam === "suspended"
-        ? statusParam
-        : undefined;
+
+    const validRoles = ["owner", "admin", "member", "viewer"] as const;
+
+    const validStatuses = ["active", "invited", "suspended"] as const;
+
+    if (
+      roleParam &&
+      !validRoles.includes(roleParam as (typeof validRoles)[number])
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid role",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (
+      statusParam &&
+      !validStatuses.includes(statusParam as (typeof validStatuses)[number])
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid status",
+        },
+        { status: 400 },
+      );
+    }
+
+    const role = roleParam
+      ? (roleParam as (typeof validRoles)[number])
+      : undefined;
+
+    const status = statusParam
+      ? (statusParam as (typeof validStatuses)[number])
+      : undefined;
 
     const result = await getUsers(DEMO_ORGANIZATION_ID, {
       page,

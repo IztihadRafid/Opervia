@@ -57,7 +57,7 @@ export async function getUsers(
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.max(Math.ceil(total / limit), 1),
     },
   };
 }
