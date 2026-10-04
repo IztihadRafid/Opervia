@@ -110,7 +110,22 @@ export default function UsersPage() {
         onEditUser={(user) => setEditingUser(user)}
         onDeleteUser={(user) => setDeletingUser(user)}
       />
-
+      {data?.data.length === 0 && (search || role || status) && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setRole("");
+              setStatus("");
+              setPage(1);
+            }}
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-muted"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
       <UsersPagination
         page={page}
         totalPages={totalPages}

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 
-import { useDeleteUser } from "@/hooks/useDeleteUser";
 import type { User } from "@/hooks/use-users";
+import { useDeleteUser } from "@/hooks/useDeleteUser";
 
 interface DeleteUserDialogProps {
   user: User | null;
@@ -26,7 +26,7 @@ export function DeleteUserDialog({
   const canDelete = confirmation === "DELETE";
 
   async function handleDelete() {
-    if (!canDelete) {
+    if (!canDelete || !user) {
       return;
     }
 

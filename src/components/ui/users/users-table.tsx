@@ -33,35 +33,49 @@ export function UsersTable({
           </thead>
 
           <tbody className="divide-y">
-            {users.map((user) => (
-              <tr
-                key={user._id}
-                className="transition-colors hover:bg-muted/30"
-              >
-                <td className="px-6 py-4">
-                  <div>
-                    <p className="font-medium">{user.name}</p>
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">No users found</p>
 
-                    <p className="text-muted-foreground">{user.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or filters.
+                    </p>
                   </div>
                 </td>
-
-                <td className="px-6 py-4 capitalize">{user.role}</td>
-
-                <td className="px-6 py-4 capitalize">{user.status}</td>
-
-                <td className="px-6 py-4 text-muted-foreground">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-
-                <td className="px-6 py-4 text-right">
-                  <UserActionsMenu
-                    onEdit={() => onEditUser?.(user)}
-                    onDelete={() => onDeleteUser?.(user)}
-                  />
-                </td>
               </tr>
-            ))}
+            ) : (
+              users.map((user) => (
+                <tr
+                  key={user._id}
+                  className="transition-colors hover:bg-muted/30"
+                >
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="font-medium">{user.name}</p>
+
+                      <p className="text-muted-foreground">{user.email}</p>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 capitalize">{user.role}</td>
+
+                  <td className="px-6 py-4 capitalize">{user.status}</td>
+
+                  <td className="px-6 py-4 text-muted-foreground">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+
+                  <td className="px-6 py-4 text-right">
+                    <UserActionsMenu
+                      onEdit={() => onEditUser?.(user)}
+                      onDelete={() => onDeleteUser?.(user)}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
