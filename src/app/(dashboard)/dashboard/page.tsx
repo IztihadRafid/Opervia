@@ -1,3 +1,4 @@
+"use client";
 import { SpendingChart } from "@/components/ui/dashboard/charts/spending-chart";
 import { ActivityItem } from "@/components/ui/dashboard/activity-item";
 import { MetricCard } from "@/components/ui/dashboard/metric-card";
@@ -7,29 +8,7 @@ import {
   RecentActivity,
   UpcomingRenewal,
 } from "../../../../types/dashboard";
-
-const metrics: DashboardMetric[] = [
-  {
-    title: "Applications",
-    value: "128",
-    description: "12 added this month",
-  },
-  {
-    title: "Monthly Spend",
-    value: "$42,840",
-    description: "8.4% from last month",
-  },
-  {
-    title: "Active Users",
-    value: "1,284",
-    description: "94.2% active",
-  },
-  {
-    title: "Renewals",
-    value: "18",
-    description: "Next 30 days",
-  },
-];
+import { useDashboard } from "@/hooks/use-dashboard";
 
 const upcomingRenewals: UpcomingRenewal[] = [
   {
@@ -88,6 +67,39 @@ const recentActivity: RecentActivity[] = [
   },
 ];
 export default function DashboardPage() {
+  const { data, isLoading, isError } = useDashboard();
+  const applicationCount = data?.metrics?.applications;
+  const monthlySpend = data?.metrics?.monthlySpend;
+  const metrics: DashboardMetric[] = [
+    {
+      title: "Applications",
+      value: isLoading
+        ? "..."
+        : isError
+          ? "—"
+          : (applicationCount?.toString() ?? "0"),
+      description: "Applications in your SaaS inventory",
+    },
+    {
+      title: "Monthly Spend",
+      value: isLoading
+        ? "..."
+        : isError
+          ? "—"
+          : `$${monthlySpend?.toLocaleString() ?? "0"}`,
+      description: "Normalized monthly recurring spend",
+    },
+    {
+      title: "Active Users",
+      value: "1,284",
+      description: "94.2% active",
+    },
+    {
+      title: "Renewals",
+      value: "18",
+      description: "Next 30 days",
+    },
+  ];
   return (
     <div className="space-y-8">
       {/* Header */}

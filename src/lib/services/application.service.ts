@@ -90,6 +90,11 @@ export async function getApplications(
     },
   };
 }
+export async function getApplicationCount(organizationId: string) {
+  return Application.countDocuments({
+    organizationId,
+  });
+}
 export async function createApplication(
   organizationId: string,
   data: {
