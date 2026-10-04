@@ -1,8 +1,6 @@
 import Activity from "@/lib/db/models/Activity";
-import User from "@/lib/db/models/User";
 import { connectDB } from "@/lib/db/mongoose";
 import { NextResponse } from "next/server";
-
 
 export async function POST() {
   try {
@@ -29,7 +27,7 @@ export async function POST() {
         success: false,
         message: "Failed to create activity",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

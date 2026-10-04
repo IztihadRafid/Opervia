@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useUsers } from "@/hooks/use-users";
 import { UsersTable } from "@/components/ui/users/users-table";
 import { UsersPagination } from "@/components/ui/users/users-pagination";
+import { UserForm } from "@/components/ui/users/userForm";
+import { CreateUserModal } from "@/components/ui/users/createUserModal";
 
 export default function UsersPage() {
   const [search, setSearch] = useState("");
@@ -14,17 +16,13 @@ export default function UsersPage() {
     "",
   );
   const [page, setPage] = useState(1);
-
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const { data, isLoading, isError } = useUsers({
     page,
     search,
     role: role || undefined,
     status: status || undefined,
   });
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, role, status]);
 
   if (isLoading) {
     return <div>Loading users...</div>;
@@ -38,31 +36,45 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage users in your organization.
-        </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage users in your organization.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCreateUserOpen(true)}
+          className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+        >
+          + Create User
+        </button>
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row">
         <input
           type="search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
           placeholder="Search by name or email..."
           className="w-full rounded-lg border bg-background px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-primary/20 md:max-w-md"
         />
 
         <select
           value={role}
-          onChange={(event) =>
+          onChange={(event) => {
             setRole(
               event.target.value as
                 "owner" | "admin" | "member" | "viewer" | "",
-            )
-          }
+            );
+            setPage(1);
+          }}
           className="rounded-lg border bg-background px-4 py-2.5 text-sm outline-none"
         >
           <option value="">All roles</option>
@@ -74,11 +86,12 @@ export default function UsersPage() {
 
         <select
           value={status}
-          onChange={(event) =>
+          onChange={(event) => {
             setStatus(
               event.target.value as "active" | "invited" | "suspended" | "",
-            )
-          }
+            );
+            setPage(1);
+          }}
           className="rounded-lg border bg-background px-4 py-2.5 text-sm outline-none"
         >
           <option value="">All statuses</option>
@@ -95,6 +108,15 @@ export default function UsersPage() {
         totalPages={totalPages}
         onPageChange={setPage}
       />
+      <CreateUserModal
+        open={isCreateUserOpen}
+        onClose={() => setIsCreateUserOpen(false)}
+      >
+        <UserForm
+          onSuccess={() => setIsCreateUserOpen(false)}
+          onCancel={() => setIsCreateUserOpen(false)}
+        />
+      </CreateUserModal>
     </div>
   );
 }
