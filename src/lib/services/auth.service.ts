@@ -10,3 +10,15 @@ export async function getUserForAuthentication(email: string) {
     .select("+passwordHash")
     .lean();
 }
+export async function updateLastLoginAt(userId: string) {
+  await connectDB();
+
+  await User.updateOne(
+    { _id: userId },
+    {
+      $set: {
+        lastLoginAt: new Date(),
+      },
+    },
+  );
+}

@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/db/mongoose";
 import { updateUserSchema } from "@/lib/validations/user.validation";
 import { deleteUser, updateUser } from "@/lib/services/user.service";
 import { auth } from "@/auth";
+import { requireRole } from "@/lib/auth/authorization";
 
 const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
@@ -23,6 +24,7 @@ export async function PATCH(
     );
   }
   try {
+    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
     await connectDB();
 
     const { id } = await params;
@@ -46,7 +48,7 @@ export async function PATCH(
         {
           success: false,
           message: "Validation failed",
-          errors: parsed.error.flatten().fieldErrors,
+          errors: parsed.error.issues,
         },
         { status: 400 },
       );
@@ -69,6 +71,15 @@ export async function PATCH(
       data: user,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden",
+        },
+        { status: 403 },
+      );
+    }
     if (
       error instanceof Error &&
       error.message === "A user with this email already exists"
@@ -109,6 +120,7 @@ export async function DELETE(
     );
   }
   try {
+    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
     await connectDB();
 
     const { id } = await params;
@@ -140,6 +152,15 @@ export async function DELETE(
       message: "User deleted successfully",
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden",
+        },
+        { status: 403 },
+      );
+    }
     if (
       error instanceof Error &&
       error.message === "Cannot delete the last owner of an organization"

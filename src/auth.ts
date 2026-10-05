@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-import { getUserForAuthentication } from "@/lib/services/auth.service";
+import {
+  getUserForAuthentication,
+  updateLastLoginAt,
+} from "@/lib/services/auth.service";
 import { verifyPassword } from "@/lib/auth/password";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -44,7 +47,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!isValidPassword) {
           return null;
         }
-
+        await updateLastLoginAt(user._id.toString());
         return {
           id: user._id.toString(),
           name: user.name,

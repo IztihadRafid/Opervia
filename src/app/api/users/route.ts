@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { requireRole } from "@/lib/auth/authorization";
 import { connectDB } from "@/lib/db/mongoose";
 import { createUser, getUsers } from "@/lib/services/user.service";
 import { createUserSchema } from "@/lib/validations/user.validation";
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
+    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "viewer");
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -83,6 +85,16 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden",
+        },
+        { status: 403 },
+      );
+    }
+
     console.error("Users GET error:", error);
 
     return NextResponse.json(
@@ -107,6 +119,7 @@ export async function POST(request: NextRequest) {
     );
   }
   try {
+    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
     await connectDB();
 
     const body = await request.json();
@@ -134,6 +147,16 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "Forbidden") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Forbidden",
+        },
+        { status: 403 },
+      );
+    }
+
     if (
       error instanceof Error &&
       error.message === "A user with this email already exists"
