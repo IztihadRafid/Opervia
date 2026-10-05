@@ -68,32 +68,45 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Users</h1>
+      <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card px-6 py-7 shadow-sm sm:px-8">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage users and invitations in your organization.
-          </p>
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl" />
+
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+              Organization access
+            </div>
+
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Users &amp; Invitations
+            </h1>
+
+            <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+              Manage your organization members, roles, permissions, and
+              invitations from one place.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsInviteUserOpen(true)}
+            className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
+          >
+            + Invite User
+          </button>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsInviteUserOpen(true)}
-          className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/20"
-        >
-          + Invite User
-        </button>
       </div>
 
-      <div className="flex w-fit rounded-xl border border-border/60 bg-muted/30 p-1">
+      <div className="inline-flex rounded-2xl border border-border/60 bg-card/70 p-1.5 shadow-sm backdrop-blur">
         <button
           type="button"
           onClick={() => setView("users")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-xl px-5 py-2.5 text-sm font-medium transition-all ${
             isUsersView
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background text-foreground shadow-md ring-1 ring-border/50"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
         >
           Users
@@ -102,15 +115,15 @@ export default function UsersPage() {
         <button
           type="button"
           onClick={() => setView("invitations")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-xl px-5 py-2.5 text-sm font-medium transition-all ${
             !isUsersView
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background text-foreground shadow-md ring-1 ring-border/50"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           }`}
         >
           Invitations
           {invitations?.pagination.total ? (
-            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {invitations.pagination.total}
             </span>
           ) : null}
@@ -200,13 +213,12 @@ export default function UsersPage() {
             <InvitationsTable invitations={invitations.data} />
           ) : (
             <div className="rounded-2xl border border-dashed border-border/70 bg-card/50 px-6 py-12 text-center">
-              <h2 className="text-lg font-semibold">No pending invitations</h2>
+              <h2 className="text-lg font-semibold">No invitations yet</h2>
 
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                When you invite someone to your organization, their pending
-                invitation will appear here.
+                When you invite someone to your organization, the invitation
+                will appear here.
               </p>
-
               <button
                 type="button"
                 onClick={() => setIsInviteUserOpen(true)}

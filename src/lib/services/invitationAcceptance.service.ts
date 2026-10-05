@@ -27,6 +27,7 @@ export async function acceptInvitation({
   const invitation = await Invitation.findOne({
     tokenHash,
     acceptedAt: null,
+    revokedAt: null,
     expiresAt: { $gt: new Date() },
   }).select("+tokenHash");
 
