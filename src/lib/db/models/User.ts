@@ -1,13 +1,12 @@
-import mongoose, {
-  Schema,
-  type Document,
-  type Model,
-} from "mongoose";
+import mongoose, { Schema, type Document, type Model } from "mongoose";
 
 export interface IUser extends Document {
   organizationId: mongoose.Types.ObjectId;
   name: string;
   email: string;
+  passwordHash?: string;
+  emailVerifiedAt?: Date | null;
+  lastLoginAt?: Date | null;
   role: "owner" | "admin" | "member" | "viewer";
   status: "active" | "invited" | "suspended";
   createdAt: Date;
@@ -38,7 +37,20 @@ const userSchema = new Schema<IUser>(
       trim: true,
       maxlength: 254,
     },
+    passwordHash: {
+      type: String,
+      select: false,
+    },
 
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
     role: {
       type: String,
       enum: ["owner", "admin", "member", "viewer"],
@@ -54,13 +66,17 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-userSchema.index({
-  organizationId: 1,
-  email: 1,
-});
+userSchema.index(
+  {
+    email: 1,
+  },
+  {
+    unique: true,
+  },
+);
 
 userSchema.index({
   organizationId: 1,
@@ -68,7 +84,6 @@ userSchema.index({
 });
 
 const User: Model<IUser> =
-  mongoose.models.User ||
-  mongoose.model<IUser>("User", userSchema);
+  mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 
 export default User;

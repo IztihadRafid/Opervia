@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/mongoose";
 import { createUser, getUsers } from "@/lib/services/user.service";
 import { createUserSchema } from "@/lib/validations/user.validation";
@@ -6,6 +7,17 @@ import { NextRequest, NextResponse } from "next/server";
 const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 },
+    );
+  }
   try {
     await connectDB();
 
@@ -83,6 +95,17 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function POST(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 },
+    );
+  }
   try {
     await connectDB();
 

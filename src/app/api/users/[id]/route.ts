@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/db/mongoose";
 import { updateUserSchema } from "@/lib/validations/user.validation";
 import { deleteUser, updateUser } from "@/lib/services/user.service";
+import { auth } from "@/auth";
 
 const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
@@ -10,6 +11,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 },
+    );
+  }
   try {
     await connectDB();
 
@@ -85,6 +97,17 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 },
+    );
+  }
   try {
     await connectDB();
 

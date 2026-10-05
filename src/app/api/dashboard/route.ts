@@ -3,10 +3,22 @@ import { NextResponse } from "next/server";
 import { getApplicationCount } from "@/lib/services/application.service";
 import { connectDB } from "@/lib/db/mongoose";
 import { getMonthlySpend } from "@/lib/services/subscription.service";
+import { auth } from "@/auth";
 
 const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
 export async function GET() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return Response.json(
+      {
+        success: false,
+        message: "Unauthorized",
+      },
+      { status: 401 },
+    );
+  }
   try {
     await connectDB();
 
