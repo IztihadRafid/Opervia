@@ -7,6 +7,7 @@ export interface IInvitation extends Document {
   tokenHash: string;
   expiresAt: Date;
   acceptedAt?: Date | null;
+  revokedAt?: Date | null;
   invitedBy: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -52,7 +53,11 @@ const invitationSchema = new Schema<IInvitation>(
       type: Date,
       default: null,
     },
-
+    revokedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     invitedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
