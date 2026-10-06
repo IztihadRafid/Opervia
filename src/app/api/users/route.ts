@@ -1,41 +1,31 @@
-import { auth } from "@/auth";
-import { requireRole } from "@/lib/auth/authorization";
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
 import { connectDB } from "@/lib/db/mongoose";
 import { createUser, getUsers } from "@/lib/services/user.service";
 import { createUserSchema } from "@/lib/validations/user.validation";
 import { NextRequest, NextResponse } from "next/server";
 
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
-
 export async function GET(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "viewer");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "viewer",
+    );
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);
 
     const page = Number(searchParams.get("page") ?? 1);
     const limit = Number(searchParams.get("limit") ?? 20);
-
     const statusParam = searchParams.get("status");
-
     const search = searchParams.get("search") ?? undefined;
-
     const roleParam = searchParams.get("role");
 
     const validRoles = ["owner", "admin", "member", "viewer"] as const;
-
     const validStatuses = ["active", "invited", "suspended"] as const;
 
     if (
@@ -72,7 +62,7 @@ export async function GET(request: NextRequest) {
       ? (statusParam as (typeof validStatuses)[number])
       : undefined;
 
-    const result = await getUsers(DEMO_ORGANIZATION_ID, {
+    const result = await getUsers(organization.organizationId, {
       page,
       limit,
       status,
@@ -85,11 +75,21 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );
@@ -106,20 +106,14 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-export async function POST(request: NextRequest) {
-  const session = await auth();
 
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
+export async function POST(request: NextRequest) {
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "admin",
+    );
+
     await connectDB();
 
     const body = await request.json();
@@ -137,7 +131,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await createUser(DEMO_ORGANIZATION_ID, parsed.data);
+    const user = await createUser(organization.organizationId, parsed.data);
 
     return NextResponse.json(
       {
@@ -147,11 +141,21 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { getInvitationDetails } from "@/lib/services/invitation.service";
 
 export async function GET(
@@ -7,6 +8,16 @@ export async function GET(
 ) {
   try {
     const { token } = await params;
+
+    if (!token || token.length !== 64) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invitation is invalid or has expired",
+        },
+        { status: 404 },
+      );
+    }
 
     const invitation = await getInvitationDetails(token);
 

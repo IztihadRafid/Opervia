@@ -4,7 +4,8 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAcceptInvitation } from "@/hooks/useAcceptInvitation";
-import { useInvitation } from "@/hooks/useInvitation";
+import { useInvitation } from "@/hooks/useInvitations";
+import Link from "next/link";
 
 type InvitePageProps = {
   params: Promise<{
@@ -209,6 +210,12 @@ export default function InvitePage({ params }: InvitePageProps) {
                 ? "Creating account..."
                 : "Accept invitation"}
             </button>
+            <Link
+              className="px-4 py-2 w-full bg-gray-300 rounded-xl"
+              href="/login"
+            >
+              Log In
+            </Link>
           </div>
         </form>
 

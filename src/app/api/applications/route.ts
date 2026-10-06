@@ -1,15 +1,17 @@
 import { connectDB } from "@/lib/db/mongoose";
-
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
 import {
   createApplication,
   getApplications,
 } from "@/lib/services/application.service";
-
 import {
   createApplicationSchema,
   getApplicationsSchema,
 } from "@/lib/validations/application.validation";
-
 import { NextResponse } from "next/server";
 import {
   ApplicationsResponse,
@@ -39,7 +41,11 @@ export async function GET(request: Request) {
 
     const { page, limit, status, search } = queryResult.data;
 
-    const result = await getApplications("6ac0c5cc8e734b2c3c24d600", {
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+    );
+
+    const result = await getApplications(organization.organizationId, {
       page,
       limit,
       status,
@@ -54,6 +60,25 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 403 },
+      );
+    }
     console.error("Applications API error:", error);
 
     return NextResponse.json(
@@ -85,8 +110,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const application = await createApplication(
+    const organization = await requireOrganizationMembership(
       "6ac0c5cc8e734b2c3c24d600",
+    );
+
+    const application = await createApplication(
+      organization.organizationId,
       result.data,
     );
 
@@ -98,6 +127,25 @@ export async function POST(request: Request) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error("Create application API error:", error);
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 403 },
+      );
+    }
 
     if (error instanceof Error && error.name === "ValidationError") {
       return NextResponse.json(

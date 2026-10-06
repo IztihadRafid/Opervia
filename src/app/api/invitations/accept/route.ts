@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { acceptInvitation } from "@/lib/services/invitationAcceptance.service";
+
 import { acceptInvitationSchema } from "@/lib/validations/acceptInvitation.validation";
 
 export async function POST(request: NextRequest) {
@@ -9,21 +10,21 @@ export async function POST(request: NextRequest) {
 
     const token = typeof body.token === "string" ? body.token.trim() : "";
 
+    if (!token || token.length !== 64) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid invitation token",
+        },
+        { status: 400 },
+      );
+    }
+
     const parsed = acceptInvitationSchema.safeParse({
       name: body.name,
       password: body.password,
       confirmPassword: body.confirmPassword,
     });
-
-    if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invitation token is required",
-        },
-        { status: 400 },
-      );
-    }
 
     if (!parsed.success) {
       return NextResponse.json(

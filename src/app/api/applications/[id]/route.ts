@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
 import {
   deleteApplication,
   updateApplicationSchema,
@@ -43,9 +47,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
-
-    const application = await updateApplication(
+    const organization = await requireOrganizationMembership(
       "6ac0c5cc8e734b2c3c24d600",
+    );
+    const application = await updateApplication(
+      organization.organizationId,
       id,
       result.data,
     );
@@ -67,6 +73,26 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
     return NextResponse.json(response);
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 403 },
+      );
+    }
+
     console.error("Update application API error:", error);
 
     return NextResponse.json(
@@ -93,8 +119,13 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
-
-    const application = await deleteApplication("6ac0c5cc8e734b2c3c24d600", id);
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+    );
+    const application = await deleteApplication(
+      organization.organizationId,
+      id,
+    );
 
     if (!application) {
       return NextResponse.json(
@@ -112,6 +143,26 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       application,
     });
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 403 },
+      );
+    }
+
     console.error("Delete application API error:", error);
 
     return NextResponse.json(

@@ -1,35 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { requireRole } from "@/lib/auth/authorization";
+
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
+
 import {
   createInvitation,
   getInvitations,
 } from "@/lib/services/invitation.service";
+
 import { createInvitationSchema } from "@/lib/validations/invitation.validation";
 
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
+import { EmailDeliveryError } from "@/lib/email/email-error";
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
-
   try {
-    const membership = await requireRole(
-      session.user.id,
-      DEMO_ORGANIZATION_ID,
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
       "admin",
     );
 
     const body = await request.json();
+
     const parsed = createInvitationSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -43,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (membership.role === "admin" && parsed.data.role === "admin") {
+    if (organization.role === "admin" && parsed.data.role === "admin") {
       return NextResponse.json(
         {
           success: false,
@@ -53,35 +47,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { invitation, token } = await createInvitation({
-      organizationId: DEMO_ORGANIZATION_ID,
+    const { invitation } = await createInvitation({
+      organizationId: organization.organizationId,
       email: parsed.data.email,
       role: parsed.data.role,
-      invitedBy: session.user.id,
+      invitedBy: organization.userId,
     });
-
-    const invitationUrl = `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/invite/${token}`;
 
     return NextResponse.json(
       {
         success: true,
-        message: "Invitation created successfully",
+        message: "Invitation sent successfully",
         data: {
           id: invitation._id,
           email: invitation.email,
           role: invitation.role,
           expiresAt: invitation.expiresAt,
-          invitationUrl,
+          emailStatus: invitation.emailStatus,
         },
       },
       { status: 201 },
     );
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );
@@ -100,6 +102,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      error instanceof Error &&
+      error.message === "This user is already a member of the organization"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 409 },
+      );
+    }
+
+    if (error instanceof EmailDeliveryError) {
+      console.error("Invitation email delivery error:", error);
+
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Invitation was created, but the email could not be delivered.",
+        },
+        { status: 502 },
+      );
+    }
+
     console.error("Invitation POST error:", error);
 
     return NextResponse.json(
@@ -111,21 +139,13 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 export async function GET(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
-
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "member");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "member",
+    );
 
     const searchParams = request.nextUrl.searchParams;
 
@@ -141,7 +161,7 @@ export async function GET(request: NextRequest) {
       : 25;
 
     const result = await getInvitations({
-      organizationId: DEMO_ORGANIZATION_ID,
+      organizationId: organization.organizationId,
       page,
       limit,
     });
@@ -151,11 +171,21 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );

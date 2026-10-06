@@ -1,30 +1,26 @@
 import { NextResponse } from "next/server";
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
 
 import { getApplicationCount } from "@/lib/services/application.service";
 import { connectDB } from "@/lib/db/mongoose";
 import { getMonthlySpend } from "@/lib/services/subscription.service";
-import { auth } from "@/auth";
-
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
 export async function GET() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return Response.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
   try {
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "viewer",
+    );
+
     await connectDB();
 
     const [applications, monthlySpend] = await Promise.all([
-      getApplicationCount(DEMO_ORGANIZATION_ID),
-      getMonthlySpend(DEMO_ORGANIZATION_ID),
+      getApplicationCount(organization.organizationId),
+      getMonthlySpend(organization.organizationId),
     ]);
 
     return NextResponse.json({
@@ -35,6 +31,26 @@ export async function GET() {
       },
     });
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 403 },
+      );
+    }
+
     console.error("Dashboard GET error:", error);
 
     return NextResponse.json(
@@ -42,9 +58,7 @@ export async function GET() {
         success: false,
         message: "Failed to load dashboard data",
       },
-      {
-        status: 500,
-      },
+      { status: 500 },
     );
   }
 }

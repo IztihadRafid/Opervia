@@ -9,6 +9,12 @@ export interface IInvitation extends Document {
   acceptedAt?: Date | null;
   revokedAt?: Date | null;
   invitedBy: mongoose.Types.ObjectId;
+  lastResentAt?: Date | null;
+  resendCount: number;
+  emailStatus: "pending" | "sent" | "failed";
+  emailSentAt?: Date | null;
+  emailError?: string | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +68,32 @@ const invitationSchema = new Schema<IInvitation>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    lastResentAt: {
+      type: Date,
+      default: null,
+    },
+
+    resendCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    emailStatus: {
+      type: String,
+      enum: ["pending", "sent", "failed"],
+      default: "pending",
+      index: true,
+    },
+
+    emailSentAt: {
+      type: Date,
+      default: null,
+    },
+
+    emailError: {
+      type: String,
+      default: null,
     },
   },
   {

@@ -1,29 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import mongoose from "mongoose";
-import { auth } from "@/auth";
-import { requireRole } from "@/lib/auth/authorization";
+
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
+
 import { revokeInvitation } from "@/lib/services/invitation.service";
 
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
-
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
-
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "admin",
+    );
 
     const { id } = await params;
 
@@ -38,7 +33,7 @@ export async function DELETE(
     }
 
     await revokeInvitation({
-      organizationId: DEMO_ORGANIZATION_ID,
+      organizationId: organization.organizationId,
       invitationId: id,
     });
 
@@ -47,11 +42,21 @@ export async function DELETE(
       message: "Invitation revoked successfully",
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );

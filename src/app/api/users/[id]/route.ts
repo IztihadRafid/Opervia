@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
-import { connectDB } from "@/lib/db/mongoose";
-import { updateUserSchema } from "@/lib/validations/user.validation";
-import { deleteUser, updateUser } from "@/lib/services/user.service";
-import { auth } from "@/auth";
-import { requireRole } from "@/lib/auth/authorization";
 
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
+import mongoose from "mongoose";
+
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
+
+import { connectDB } from "@/lib/db/mongoose";
+
+import { updateUserSchema } from "@/lib/validations/user.validation";
+
+import { deleteUser, updateUser } from "@/lib/services/user.service";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "admin",
+    );
+
     await connectDB();
 
     const { id } = await params;
@@ -54,7 +53,7 @@ export async function PATCH(
       );
     }
 
-    const user = await updateUser(DEMO_ORGANIZATION_ID, id, parsed.data);
+    const user = await updateUser(organization.organizationId, id, parsed.data);
 
     if (!user) {
       return NextResponse.json(
@@ -71,15 +70,26 @@ export async function PATCH(
       data: user,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );
     }
+
     if (
       error instanceof Error &&
       error.message === "A user with this email already exists"
@@ -104,23 +114,17 @@ export async function PATCH(
     );
   }
 }
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
   try {
-    await requireRole(session.user.id, DEMO_ORGANIZATION_ID, "admin");
+    const organization = await requireOrganizationMembership(
+      "6ac0c5cc8e734b2c3c24d600",
+      "admin",
+    );
+
     await connectDB();
 
     const { id } = await params;
@@ -135,7 +139,7 @@ export async function DELETE(
       );
     }
 
-    const user = await deleteUser(DEMO_ORGANIZATION_ID, id);
+    const user = await deleteUser(organization.organizationId, id);
 
     if (!user) {
       return NextResponse.json(
@@ -152,15 +156,26 @@ export async function DELETE(
       message: "User deleted successfully",
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "Forbidden") {
+    if (error instanceof UnauthorizedError) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden",
+          message: error.message,
+        },
+        { status: 401 },
+      );
+    }
+
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
         },
         { status: 403 },
       );
     }
+
     if (
       error instanceof Error &&
       error.message === "Cannot delete the last owner of an organization"
@@ -173,6 +188,7 @@ export async function DELETE(
         { status: 409 },
       );
     }
+
     console.error("User DELETE error:", error);
 
     return NextResponse.json(
