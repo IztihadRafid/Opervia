@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAcceptInvitation } from "@/hooks/useAcceptInvitation";
-import { useInvitation } from "@/hooks/useInvitations";
+import { useInvitation } from "@/hooks/useInvitation";
 
 type InvitePageProps = {
   params: Promise<{

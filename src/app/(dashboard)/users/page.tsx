@@ -71,7 +71,7 @@ export default function UsersPage() {
       <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card px-6 py-7 shadow-sm sm:px-8">
         <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
 
-        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-1/3 h-48 w-48 rounded-full bg-blue-400/10 blur-3xl" />
 
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -132,52 +132,54 @@ export default function UsersPage() {
 
       {isUsersView ? (
         <>
-          <div className="flex flex-col gap-3 md:flex-row">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
-              placeholder="Search by name or email..."
-              className="w-full rounded-lg border bg-background px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-primary/20 md:max-w-md"
-            />
+          <div className="rounded-2xl border border-border/60 bg-card/60 p-3 shadow-sm backdrop-blur">
+            <div className="flex flex-col gap-3 md:flex-row">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search by name or email..."
+                className="w-full rounded-xl border border-border/60 bg-background/80 px-4 py-2.5 text-sm outline-none transition placeholder:text-muted-foreground/70 focus:border-primary/40 focus:ring-4 focus:ring-primary/10 md:max-w-md"
+              />
 
-            <select
-              value={role}
-              onChange={(event) => {
-                setRole(
-                  event.target.value as
-                    "owner" | "admin" | "member" | "viewer" | "",
-                );
-                setPage(1);
-              }}
-              className="rounded-lg border bg-background px-4 py-2.5 text-sm outline-none"
-            >
-              <option value="">All roles</option>
-              <option value="owner">Owner</option>
-              <option value="admin">Admin</option>
-              <option value="member">Member</option>
-              <option value="viewer">Viewer</option>
-            </select>
+              <select
+                value={role}
+                onChange={(event) => {
+                  setRole(
+                    event.target.value as
+                      "owner" | "admin" | "member" | "viewer" | "",
+                  );
+                  setPage(1);
+                }}
+                className="rounded-xl border border-border/60 bg-background/80 px-4 py-2.5 text-sm outline-none transition hover:border-border focus:border-primary/40 focus:ring-4 focus:ring-primary/10"
+              >
+                <option value="">All roles</option>
+                <option value="owner">Owner</option>
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+                <option value="viewer">Viewer</option>
+              </select>
 
-            <select
-              value={status}
-              onChange={(event) => {
-                setStatus(
-                  event.target.value as "active" | "invited" | "suspended" | "",
-                );
-                setPage(1);
-              }}
-              className="rounded-lg border bg-background px-4 py-2.5 text-sm outline-none"
-            >
-              <option value="">All statuses</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-            </select>
+              <select
+                value={status}
+                onChange={(event) => {
+                  setStatus(
+                    event.target.value as
+                      "active" | "invited" | "suspended" | "",
+                  );
+                  setPage(1);
+                }}
+                className="rounded-xl border border-border/60 bg-background/80 px-4 py-2.5 text-sm outline-none transition hover:border-border focus:border-primary/40 focus:ring-4 focus:ring-primary/10"
+              >
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
           </div>
-
           <UsersTable
             users={data?.data ?? []}
             onEditUser={(user) => setEditingUser(user)}
