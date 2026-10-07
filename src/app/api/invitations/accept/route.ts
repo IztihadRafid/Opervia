@@ -31,7 +31,10 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Validation failed",
-          errors: parsed.error.issues,
+          errors: parsed.error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+          })),
         },
         { status: 400 },
       );

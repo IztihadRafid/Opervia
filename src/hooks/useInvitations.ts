@@ -40,6 +40,7 @@ export type Invitation = {
   expiresAt: string;
   invitedBy: string;
   createdAt: string;
+  emailStatus: "pending" | "sent" | "failed";
   status: "pending" | "expired" | "revoked";
 };
 type InvitationsResponse = {

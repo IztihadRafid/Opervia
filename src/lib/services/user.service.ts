@@ -70,30 +70,44 @@ export async function createUser(
     status?: "active" | "invited" | "suspended";
   },
 ) {
+  const email = data.email.trim().toLowerCase();
+
   const existingUser = await User.findOne({
-    organizationId,
-    email: data.email,
+    email,
   });
 
   if (existingUser) {
     throw new Error("A user with this email already exists");
   }
 
-  const user = await User.create({
-    organizationId,
-    name: data.name,
-    email: data.email,
-    role: data.role ?? "member",
-    status: data.status ?? "active",
-  });
+  try {
+    const user = await User.create({
+      organizationId,
+      name: data.name.trim(),
+      email,
+      role: data.role ?? "member",
+      status: data.status ?? "active",
+    });
 
-  return {
-    ...user.toObject(),
-    _id: user._id.toString(),
-    organizationId: user.organizationId.toString(),
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
-  };
+    return {
+      ...user.toObject(),
+      _id: user._id.toString(),
+      organizationId: user.organizationId.toString(),
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
+    };
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      throw new Error("A user with this email already exists");
+    }
+
+    throw error;
+  }
 }
 export async function updateUser(
   organizationId: string,

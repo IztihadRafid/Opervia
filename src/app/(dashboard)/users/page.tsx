@@ -48,21 +48,80 @@ export default function UsersPage() {
   const invitations = invitationsQuery.data;
 
   if (isUsersView && usersQuery.isLoading) {
-    return <div>Loading users...</div>;
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <div className="rounded-2xl border border-border/60 bg-card px-8 py-10 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+
+          <p className="mt-4 text-sm font-medium">Loading users...</p>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fetching organization members.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (isUsersView && usersQuery.isError) {
-    return <div>Failed to load users.</div>;
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <div className="rounded-2xl border border-destructive/20 bg-card px-8 py-10 text-center shadow-sm">
+          <p className="text-sm font-semibold">Failed to load users</p>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Something went wrong while loading organization members.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => usersQuery.refetch()}
+            className="mt-5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!isUsersView && invitationsQuery.isLoading) {
-    return <div>Loading invitations...</div>;
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <div className="rounded-2xl border border-border/60 bg-card px-8 py-10 text-center shadow-sm">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+
+          <p className="mt-4 text-sm font-medium">Loading invitations...</p>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fetching organization invitations.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (!isUsersView && invitationsQuery.isError) {
-    return <div>Failed to load invitations.</div>;
-  }
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <div className="rounded-2xl border border-destructive/20 bg-card px-8 py-10 text-center shadow-sm">
+          <p className="text-sm font-semibold">Failed to load invitations</p>
 
+          <p className="mt-1 text-sm text-muted-foreground">
+            Something went wrong while loading invitations.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => invitationsQuery.refetch()}
+            className="mt-5 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
   const totalUserPages = data?.pagination.totalPages ?? 1;
   const totalInvitationPages = invitations?.pagination.totalPages ?? 1;
 

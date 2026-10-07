@@ -18,7 +18,12 @@ const statusStyles = {
     "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
   revoked: "border-destructive/20 bg-destructive/10 text-destructive",
 } as const;
-
+const emailStatusStyles = {
+  sent: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  failed: "border-destructive/20 bg-destructive/10 text-destructive",
+  pending:
+    "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+} as const;
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en", {
     day: "2-digit",
@@ -107,7 +112,9 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
                   <th className="px-5 py-3.5 font-medium text-muted-foreground">
                     Status
                   </th>
-
+                  <th className="px-5 py-3.5 font-medium text-muted-foreground">
+                    Delivery
+                  </th>
                   <th className="px-5 py-3.5 font-medium text-muted-foreground">
                     Expires
                   </th>
@@ -134,12 +141,12 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
                       className="transition-colors hover:bg-muted/20"
                     >
                       <td className="px-5 py-4 font-medium">
-                        {invitation.email}
+                        {invitation?.email}
                       </td>
 
                       <td className="px-5 py-4">
                         <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-primary">
-                          {invitation.role}
+                          {invitation?.role}
                         </span>
                       </td>
 
@@ -149,16 +156,24 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
                             statusStyles[invitation.status]
                           }`}
                         >
-                          {invitation.status}
+                          {invitation?.status}
                         </span>
                       </td>
-
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${
+                            emailStatusStyles[invitation.emailStatus]
+                          }`}
+                        >
+                          {invitation?.emailStatus}
+                        </span>
+                      </td>
                       <td className="px-5 py-4 text-muted-foreground">
-                        {formatDate(invitation.expiresAt)}
+                        {formatDate(invitation?.expiresAt)}
                       </td>
 
                       <td className="px-5 py-4 text-muted-foreground">
-                        {formatDate(invitation.createdAt)}
+                        {formatDate(invitation?.createdAt)}
                       </td>
 
                       <td className="px-5 py-4">

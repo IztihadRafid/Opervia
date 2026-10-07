@@ -3,9 +3,11 @@ import mongoose from "mongoose";
 import Invitation from "@/lib/db/models/Invitation";
 import Membership from "@/lib/db/models/Membership";
 import User from "@/lib/db/models/User";
+
 import { hashInvitationToken } from "@/lib/auth/invitation";
 import { hashPassword } from "@/lib/auth/password";
 import { connectDB } from "@/lib/db/mongoose";
+import { passwordSchema } from "@/lib/validations/password";
 
 export async function acceptInvitation({
   token,
@@ -20,6 +22,20 @@ export async function acceptInvitation({
 
   if (!token || token.length !== 64) {
     throw new Error("Invalid invitation token");
+  }
+
+  const parsedPassword = passwordSchema.safeParse(password);
+
+  if (!parsedPassword.success) {
+    throw new Error(
+      parsedPassword.error.issues[0]?.message ?? "Invalid password",
+    );
+  }
+
+  const trimmedName = name.trim();
+
+  if (trimmedName.length < 2 || trimmedName.length > 100) {
+    throw new Error("Invalid name");
   }
 
   const tokenHash = hashInvitationToken(token);
@@ -43,7 +59,7 @@ export async function acceptInvitation({
     throw new Error("A user with this email already exists");
   }
 
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hashPassword(parsedPassword.data);
 
   const session = await mongoose.startSession();
 
@@ -54,7 +70,7 @@ export async function acceptInvitation({
       [
         {
           organizationId: invitation.organizationId,
-          name: name.trim(),
+          name: trimmedName,
           email: invitation.email,
           passwordHash,
           emailVerifiedAt: new Date(),
@@ -78,6 +94,7 @@ export async function acceptInvitation({
     );
 
     invitation.acceptedAt = new Date();
+
     await invitation.save({ session });
 
     await session.commitTransaction();
@@ -88,8 +105,18 @@ export async function acceptInvitation({
       role: invitation.role,
       email: invitation.email,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     await session.abortTransaction();
+
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === 11000
+    ) {
+      throw new Error("A user with this email already exists");
+    }
+
     throw error;
   } finally {
     await session.endSession();

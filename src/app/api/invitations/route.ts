@@ -47,12 +47,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { invitation } = await createInvitation({
+    const { invitation, token } = await createInvitation({
       organizationId: organization.organizationId,
       email: parsed.data.email,
       role: parsed.data.role,
       invitedBy: organization.userId,
     });
+
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+
+    const invitationUrl = `${baseUrl}/invite/${token}`;
 
     return NextResponse.json(
       {
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
           role: invitation.role,
           expiresAt: invitation.expiresAt,
           emailStatus: invitation.emailStatus,
+          invitationUrl,
         },
       },
       { status: 201 },

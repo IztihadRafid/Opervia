@@ -125,13 +125,19 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           message: "Validation failed",
-          errors: parsed.error.flatten().fieldErrors,
+          errors: parsed.error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+          })),
         },
         { status: 400 },
       );
     }
 
-    const user = await createUser(organization.organizationId, parsed.data);
+    const user = await createUser(organization.organizationId, {
+      ...parsed.data,
+      status: "invited",
+    });
 
     return NextResponse.json(
       {

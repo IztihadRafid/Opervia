@@ -9,7 +9,6 @@ import {
 } from "@/lib/auth/invitation";
 import { connectDB } from "@/lib/db/mongoose";
 import { EmailDeliveryError } from "@/lib/email/email-error";
-import Membership from "@/lib/db/models/Membership";
 
 const INVITATION_EXPIRATION_DAYS = 7;
 const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -40,15 +39,7 @@ export async function createInvitation({
   }).select("_id");
 
   if (existingUser) {
-    const existingMembership = await Membership.findOne({
-      userId: existingUser._id,
-      organizationId,
-      status: { $in: ["active", "invited"] },
-    }).select("_id");
-
-    if (existingMembership) {
-      throw new Error("This user is already a member of the organization");
-    }
+    throw new Error("A user with this email already exists");
   }
   const existingInvitation = await Invitation.findOne({
     organizationId,
@@ -372,7 +363,7 @@ export async function getInvitations({
 
   const [invitations, total] = await Promise.all([
     Invitation.find(filter)
-      .select("email role expiresAt invitedBy createdAt revokedAt")
+      .select("email role expiresAt invitedBy createdAt revokedAt emailStatus")
       .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(safeLimit)
@@ -390,6 +381,7 @@ export async function getInvitations({
     expiresAt: invitation.expiresAt,
     invitedBy: invitation.invitedBy.toString(),
     createdAt: invitation.createdAt,
+    emailStatus: invitation.emailStatus,
     status: invitation.revokedAt
       ? ("revoked" as const)
       : invitation.expiresAt > now
