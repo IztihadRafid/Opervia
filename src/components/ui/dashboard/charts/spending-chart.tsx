@@ -1,131 +1,143 @@
 "use client";
 
 import dynamic from "next/dynamic";
+
 import type { ApexOptions } from "apexcharts";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-const monthlySpending = [
-  18400, 22100, 19800, 24700, 23100, 28600, 26400, 31200, 29800, 33700, 32100,
-  36800,
-];
+interface SpendingPoint {
+  label: string;
+  amount: number;
+}
 
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+interface SpendingChartProps {
+  data: SpendingPoint[];
+  isLoading?: boolean;
+}
 
-const options: ApexOptions = {
-  chart: {
-    type: "area",
-    height: 350,
-    toolbar: {
-      show: false,
+export function SpendingChart({ data, isLoading = false }: SpendingChartProps) {
+  const options: ApexOptions = {
+    chart: {
+      type: "area",
+      height: 350,
+      toolbar: {
+        show: false,
+      },
+      zoom: {
+        enabled: false,
+      },
+      fontFamily: "var(--font-jakarta), sans-serif",
     },
-    zoom: {
+
+    colors: ["#4f46e5"],
+
+    stroke: {
+      curve: "smooth",
+      width: 3,
+    },
+
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.35,
+        opacityTo: 0.02,
+        stops: [0, 90, 100],
+      },
+    },
+
+    dataLabels: {
       enabled: false,
     },
-    fontFamily: "var(--font-jakarta), sans-serif",
-  },
 
-  colors: ["#4f46e5"],
-
-  stroke: {
-    curve: "smooth",
-    width: 3,
-  },
-
-  fill: {
-    type: "gradient",
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.35,
-      opacityTo: 0.02,
-      stops: [0, 90, 100],
+    grid: {
+      borderColor: "rgba(148, 163, 184, 0.15)",
+      strokeDashArray: 4,
     },
-  },
 
-  dataLabels: {
-    enabled: false,
-  },
+    xaxis: {
+      categories: data.map((point) => point.label),
 
-  grid: {
-    borderColor: "rgba(148, 163, 184, 0.15)",
-    strokeDashArray: 4,
-  },
-
-  xaxis: {
-    categories: months,
-    axisBorder: {
-      show: false,
-    },
-    axisTicks: {
-      show: false,
-    },
-    labels: {
-      style: {
-        colors: "#94a3b8",
-        fontSize: "12px",
+      axisBorder: {
+        show: false,
       },
-    },
-  },
 
-  yaxis: {
-    labels: {
-      style: {
-        colors: "#94a3b8",
-        fontSize: "12px",
+      axisTicks: {
+        show: false,
       },
-      formatter: (value) => `$${Math.round(value / 1000)}k`,
-    },
-  },
 
-  tooltip: {
-    theme: "light",
-    y: {
-      formatter: (value) => `$${value.toLocaleString()}`,
-    },
-  },
-
-  markers: {
-    size: 0,
-    hover: {
-      size: 6,
-    },
-  },
-
-  responsive: [
-    {
-      breakpoint: 768,
-      options: {
-        chart: {
-          height: 280,
+      labels: {
+        style: {
+          colors: "#94a3b8",
+          fontSize: "12px",
         },
       },
     },
-  ],
-};
 
-const series = [
-  {
-    name: "SaaS Spending",
-    data: monthlySpending,
-  },
-];
+    yaxis: {
+      labels: {
+        style: {
+          colors: "#94a3b8",
+          fontSize: "12px",
+        },
 
-export function SpendingChart() {
+        formatter: (value) => `$${Math.round(value / 1000)}k`,
+      },
+    },
+
+    tooltip: {
+      theme: "light",
+
+      y: {
+        formatter: (value) => `$${value.toLocaleString()}`,
+      },
+    },
+
+    markers: {
+      size: 0,
+
+      hover: {
+        size: 6,
+      },
+    },
+
+    responsive: [
+      {
+        breakpoint: 768,
+
+        options: {
+          chart: {
+            height: 280,
+          },
+        },
+      },
+    ],
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-[350px] w-full animate-pulse rounded-lg bg-muted/40" />
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[350px] items-center justify-center text-sm text-muted-foreground">
+        No spending data available.
+      </div>
+    );
+  }
+
+  const series = [
+    {
+      name: "SaaS Spending",
+      data: data.map((point) => point.amount),
+    },
+  ];
+
   return (
     <div className="w-full">
       <Chart

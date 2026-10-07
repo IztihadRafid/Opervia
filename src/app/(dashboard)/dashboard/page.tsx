@@ -1,14 +1,17 @@
 "use client";
+import { SubscriptionAnalytics } from "@/components/ui/dashboard/subscription-analytics";
 import { SpendingChart } from "@/components/ui/dashboard/charts/spending-chart";
 import { ActivityItem } from "@/components/ui/dashboard/activity-item";
 import { MetricCard } from "@/components/ui/dashboard/metric-card";
 import { RenewalItem } from "@/components/ui/dashboard/renewal-item";
+import { useState } from "react";
 import {
   DashboardMetric,
   RecentActivity,
   UpcomingRenewal,
 } from "../../../../types/dashboard";
-import { useDashboard } from "@/hooks/use-dashboard";
+
+import { useDashboard, type DashboardRange } from "@/hooks/use-dashboard";
 
 const upcomingRenewals: UpcomingRenewal[] = [
   {
@@ -40,6 +43,7 @@ const upcomingRenewals: UpcomingRenewal[] = [
     date: "Oct 28, 2026",
   },
 ];
+
 const recentActivity: RecentActivity[] = [
   {
     id: "activity-1",
@@ -66,10 +70,17 @@ const recentActivity: RecentActivity[] = [
     time: "3 hours ago",
   },
 ];
+
 export default function DashboardPage() {
-  const { data, isLoading, isError } = useDashboard();
+  const [range, setRange] = useState<DashboardRange>("12m");
+
+  const { data, isLoading, isError } = useDashboard(range);
+
   const applicationCount = data?.metrics?.applications;
   const monthlySpend = data?.metrics?.monthlySpend;
+  const activeUsers = data?.metrics?.activeUsers;
+  const upcomingRenewalCount = data?.metrics?.upcomingRenewals;
+
   const metrics: DashboardMetric[] = [
     {
       title: "Applications",
@@ -91,15 +102,24 @@ export default function DashboardPage() {
     },
     {
       title: "Active Users",
-      value: "1,284",
-      description: "94.2% active",
+      value: isLoading
+        ? "..."
+        : isError
+          ? "—"
+          : (activeUsers?.toLocaleString() ?? "0"),
+      description: "Active users in your organization",
     },
     {
       title: "Renewals",
-      value: "18",
+      value: isLoading
+        ? "..."
+        : isError
+          ? "—"
+          : (upcomingRenewalCount?.toLocaleString() ?? "0"),
       description: "Next 30 days",
     },
   ];
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -136,7 +156,35 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6">
-            <SpendingChart />
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(
+                [
+                  ["7d", "7 Days"],
+                  ["30d", "30 Days"],
+                  ["90d", "90 Days"],
+                  ["6m", "6 Months"],
+                  ["12m", "12 Months"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setRange(value)}
+                  className={`rounded-md px-3 py-1.5 text-sm transition ${
+                    range === value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <SpendingChart
+              data={data?.spending?.data ?? []}
+              isLoading={isLoading}
+            />
           </div>
         </section>
 
@@ -163,6 +211,11 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+
+      {/* Subscription Analytics */}
+      {data?.subscriptions && (
+        <SubscriptionAnalytics data={data.subscriptions} />
+      )}
 
       {/* Recent Activity */}
       <section className="rounded-xl border bg-card p-6">

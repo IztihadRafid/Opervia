@@ -1,16 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
 import {
   ForbiddenError,
   UnauthorizedError,
   requireOrganizationMembership,
 } from "@/lib/auth/organization";
 
-import { getApplicationCount } from "@/lib/services/application.service";
-import { connectDB } from "@/lib/db/mongoose";
-import { getMonthlySpend } from "@/lib/services/subscription.service";
+import {
+  getDashboardData,
+  type DashboardRange,
+} from "@/lib/services/dashboard.service";
 
-export async function GET() {
+import { connectDB } from "@/lib/db/mongoose";
+
+const validRanges: DashboardRange[] = ["7d", "30d", "90d", "6m", "12m"];
+
+export async function GET(request: NextRequest) {
   try {
+    const rangeParam = request.nextUrl.searchParams.get("range") ?? "12m";
+
+    const range: DashboardRange = validRanges.includes(
+      rangeParam as DashboardRange,
+    )
+      ? (rangeParam as DashboardRange)
+      : "12m";
+
     const organization = await requireOrganizationMembership(
       "6ac0c5cc8e734b2c3c24d600",
       "viewer",
@@ -18,17 +32,14 @@ export async function GET() {
 
     await connectDB();
 
-    const [applications, monthlySpend] = await Promise.all([
-      getApplicationCount(organization.organizationId),
-      getMonthlySpend(organization.organizationId),
-    ]);
+    const dashboard = await getDashboardData(
+      organization.organizationId,
+      range,
+    );
 
     return NextResponse.json({
       success: true,
-      metrics: {
-        applications,
-        monthlySpend,
-      },
+      ...dashboard,
     });
   } catch (error) {
     if (error instanceof UnauthorizedError) {
