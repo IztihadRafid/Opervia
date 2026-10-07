@@ -12,7 +12,11 @@ import { connectDB } from "@/lib/db/mongoose";
 
 import { updateUserSchema } from "@/lib/validations/user.validation";
 
-import { deleteUser, updateUser } from "@/lib/services/user.service";
+import {
+  deleteUser,
+  getUserById,
+  updateUser,
+} from "@/lib/services/user.service";
 
 export async function PATCH(
   request: NextRequest,
@@ -50,6 +54,38 @@ export async function PATCH(
           errors: parsed.error.issues,
         },
         { status: 400 },
+      );
+    }
+
+    const targetUser = await getUserById(organization.organizationId, id);
+
+    if (!targetUser) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 },
+      );
+    }
+
+    if (targetUser.role === "owner" && organization.role !== "owner") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only owners can modify owner users",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (
+      organization.role !== "owner" &&
+      (parsed.data.role === "owner" || parsed.data.role === "admin")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only owners can assign admin or owner roles",
+        },
+        { status: 403 },
       );
     }
 
@@ -136,6 +172,25 @@ export async function DELETE(
           message: "Invalid user ID",
         },
         { status: 400 },
+      );
+    }
+
+    const targetUser = await getUserById(organization.organizationId, id);
+
+    if (!targetUser) {
+      return NextResponse.json(
+        { success: false, message: "User not found" },
+        { status: 404 },
+      );
+    }
+
+    if (targetUser.role === "owner" && organization.role !== "owner") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only owners can delete owner users",
+        },
+        { status: 403 },
       );
     }
 

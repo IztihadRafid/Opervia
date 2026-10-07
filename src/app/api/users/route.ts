@@ -133,7 +133,18 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-
+    if (
+      organization.role !== "owner" &&
+      (parsed.data.role === "owner" || parsed.data.role === "admin")
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only owners can create admin or owner users",
+        },
+        { status: 403 },
+      );
+    }
     const user = await createUser(organization.organizationId, {
       ...parsed.data,
       status: "invited",

@@ -109,6 +109,14 @@ export async function createUser(
     throw error;
   }
 }
+export async function getUserById(organizationId: string, userId: string) {
+  return User.findOne({
+    _id: userId,
+    organizationId,
+  })
+    .select("_id role status")
+    .lean();
+}
 export async function updateUser(
   organizationId: string,
   userId: string,
