@@ -1,13 +1,11 @@
 import mongoose from "mongoose";
-
-import { getApplicationCount } from "@/lib/services/application.service";
-
-import { getMonthlySpend } from "@/lib/services/subscription.service";
-
+import Application from "@/lib/db/models/Application";
+import {
+  getMonthlySpend,
+  getRenewalIntelligence,
+} from "@/lib/services/subscription.service";
 import User from "@/lib/db/models/User";
-
 import Subscription from "@/lib/db/models/Subscription";
-
 export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
 
 export interface DashboardSpendingPoint {
@@ -29,6 +27,44 @@ export interface DashboardSubscriptionAnalytics {
     high: number;
   };
 }
+export interface DashboardApplicationAnalytics {
+  total: number;
+  status: {
+    active: number;
+    inactive: number;
+    archived: number;
+  };
+  categories: {
+    name: string;
+    count: number;
+  }[];
+  vendors: {
+    name: string;
+    count: number;
+  }[];
+  userCountDistribution: {
+    zero: number;
+    low: number;
+    medium: number;
+    high: number;
+  };
+}
+export interface DashboardRenewalIntelligence {
+  expired: number;
+  thisWeek: number;
+  thisMonth: number;
+  nextMonth: number;
+  items: {
+    id: string;
+    applicationName: string;
+    plan: string;
+    amount: number;
+    currency: string;
+    billingCycle: "monthly" | "quarterly" | "yearly";
+    renewalDate: string;
+    category: "expired" | "this_week" | "this_month" | "next_month";
+  }[];
+}
 export interface DashboardMetrics {
   applications: number;
   monthlySpend: number;
@@ -45,6 +81,8 @@ export interface DashboardData {
   };
 
   subscriptions: DashboardSubscriptionAnalytics;
+  applications: DashboardApplicationAnalytics;
+  renewals: DashboardRenewalIntelligence;
 }
 
 interface SpendingBucket {
@@ -491,58 +529,261 @@ async function getSubscriptionAnalytics(
     costDistribution,
   };
 }
+
+async function getApplicationAnalytics(
+  organizationId: string,
+): Promise<DashboardApplicationAnalytics> {
+  if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+    return {
+      total: 0,
+      status: {
+        active: 0,
+        inactive: 0,
+        archived: 0,
+      },
+      categories: [],
+      vendors: [],
+      userCountDistribution: {
+        zero: 0,
+        low: 0,
+        medium: 0,
+        high: 0,
+      },
+    };
+  }
+
+  const organizationObjectId = new mongoose.Types.ObjectId(organizationId);
+
+  const result = await Application.aggregate([
+    {
+      $match: {
+        organizationId: organizationObjectId,
+      },
+    },
+
+    {
+      $facet: {
+        total: [
+          {
+            $count: "count",
+          },
+        ],
+
+        status: [
+          {
+            $group: {
+              _id: "$status",
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+        ],
+
+        categories: [
+          {
+            $group: {
+              _id: "$category",
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+          {
+            $sort: {
+              count: -1,
+              _id: 1,
+            },
+          },
+          {
+            $limit: 10,
+          },
+        ],
+
+        vendors: [
+          {
+            $group: {
+              _id: "$vendor",
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+          {
+            $sort: {
+              count: -1,
+              _id: 1,
+            },
+          },
+          {
+            $limit: 10,
+          },
+        ],
+
+        userCountDistribution: [
+          {
+            $group: {
+              _id: null,
+
+              zero: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ["$usersCount", 0],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+
+              low: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ["$usersCount", 1],
+                        },
+                        {
+                          $lte: ["$usersCount", 10],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+
+              medium: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ["$usersCount", 11],
+                        },
+                        {
+                          $lte: ["$usersCount", 100],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+
+              high: {
+                $sum: {
+                  $cond: [
+                    {
+                      $gt: ["$usersCount", 100],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const analytics = result[0];
+
+  const status = {
+    active: 0,
+    inactive: 0,
+    archived: 0,
+  };
+
+  for (const item of analytics?.status ?? []) {
+    if (item._id === "active") {
+      status.active = item.count;
+    }
+
+    if (item._id === "inactive") {
+      status.inactive = item.count;
+    }
+
+    if (item._id === "archived") {
+      status.archived = item.count;
+    }
+  }
+
+  const categories = (analytics?.categories ?? []).map(
+    (item: { _id: string; count: number }) => ({
+      name: item._id,
+      count: item.count,
+    }),
+  );
+
+  const vendors = (analytics?.vendors ?? []).map(
+    (item: { _id: string; count: number }) => ({
+      name: item._id,
+      count: item.count,
+    }),
+  );
+
+  const userCountDistribution = {
+    zero: analytics?.userCountDistribution?.[0]?.zero ?? 0,
+
+    low: analytics?.userCountDistribution?.[0]?.low ?? 0,
+
+    medium: analytics?.userCountDistribution?.[0]?.medium ?? 0,
+
+    high: analytics?.userCountDistribution?.[0]?.high ?? 0,
+  };
+
+  return {
+    total: analytics?.total?.[0]?.count ?? 0,
+    status,
+    categories,
+    vendors,
+    userCountDistribution,
+  };
+}
+
 export async function getDashboardData(
   organizationId: string,
   range: DashboardRange = "12m",
 ): Promise<DashboardData> {
-  const now = new Date();
-
-  const thirtyDaysFromNow = new Date(now);
-
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
   const [
-    applications,
     monthlySpend,
     activeUsers,
-    upcomingRenewals,
     spending,
     subscriptions,
+    applicationAnalytics,
+    renewalIntelligence,
   ] = await Promise.all([
-    getApplicationCount(organizationId),
-
     getMonthlySpend(organizationId),
-
     User.countDocuments({
       organizationId,
       status: "active",
     }),
-
-    Subscription.countDocuments({
-      organizationId,
-      status: "active",
-      renewalDate: {
-        $gte: now,
-        $lte: thirtyDaysFromNow,
-      },
-    }),
-
     getSpendingAnalytics(organizationId, range),
     getSubscriptionAnalytics(organizationId),
+    getApplicationAnalytics(organizationId),
+    getRenewalIntelligence(organizationId),
   ]);
 
   return {
     metrics: {
-      applications,
+      applications: applicationAnalytics.total,
       monthlySpend,
       activeUsers,
-      upcomingRenewals,
+      upcomingRenewals: subscriptions.upcomingRenewals,
     },
-
     spending: {
       range,
       data: spending,
     },
     subscriptions,
+    applications: applicationAnalytics,
+    renewals: renewalIntelligence,
   };
 }

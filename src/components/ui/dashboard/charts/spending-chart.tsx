@@ -139,7 +139,11 @@ export function SpendingChart({ data, isLoading = false }: SpendingChartProps) {
   ];
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      role="img"
+      aria-label="SaaS spending trend over the selected date range"
+    >
       <Chart
         options={options}
         series={series}

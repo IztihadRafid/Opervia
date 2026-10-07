@@ -9,6 +9,46 @@ interface DashboardSpendingPoint {
   amount: number;
 }
 
+interface DashboardApplicationAnalytics {
+  total: number;
+  status: {
+    active: number;
+    inactive: number;
+    archived: number;
+  };
+  categories: {
+    name: string;
+    count: number;
+  }[];
+  vendors: {
+    name: string;
+    count: number;
+  }[];
+  userCountDistribution: {
+    zero: number;
+    low: number;
+    medium: number;
+    high: number;
+  };
+}
+
+interface DashboardRenewalIntelligence {
+  expired: number;
+  thisWeek: number;
+  thisMonth: number;
+  nextMonth: number;
+  items: {
+    id: string;
+    applicationName: string;
+    plan: string;
+    amount: number;
+    currency: string;
+    billingCycle: "monthly" | "quarterly" | "yearly";
+    renewalDate: string;
+    category: "expired" | "this_week" | "this_month" | "next_month";
+  }[];
+}
+
 interface DashboardResponse {
   success: boolean;
 
@@ -28,19 +68,21 @@ interface DashboardResponse {
     active: number;
     expired: number;
     upcomingRenewals: number;
-
     billingCycle: {
       monthly: number;
       quarterly: number;
       yearly: number;
     };
-
     costDistribution: {
       low: number;
       medium: number;
       high: number;
     };
   };
+
+  applications: DashboardApplicationAnalytics;
+
+  renewals: DashboardRenewalIntelligence;
 }
 
 async function fetchDashboard(
@@ -59,5 +101,7 @@ export function useDashboard(range: DashboardRange = "12m") {
   return useQuery({
     queryKey: ["dashboard", range],
     queryFn: () => fetchDashboard(range),
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
