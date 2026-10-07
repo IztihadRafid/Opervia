@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 
 import {
   getUserForAuthentication,
+  getUserForSession,
   updateLastLoginAt,
 } from "@/lib/services/auth.service";
 import { verifyPassword } from "@/lib/auth/password";
@@ -47,11 +48,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (!isValidPassword) {
           return null;
         }
+
         await updateLastLoginAt(user._id.toString());
+
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          sessionVersion: user.sessionVersion ?? 1,
         };
       },
     }),
@@ -61,18 +65,33 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     strategy: "jwt",
     maxAge: 8 * 60 * 60,
   },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.userId = user.id;
+        token.sessionVersion = user.sessionVersion ?? 1;
+      }
+
+      if (token.userId && token.sessionVersion !== undefined) {
+        const currentUser = await getUserForSession(String(token.userId));
+
+        if (
+          !currentUser ||
+          currentUser.status !== "active" ||
+          (currentUser.sessionVersion ?? 1) !== token.sessionVersion
+        ) {
+          token.userId = undefined;
+          token.sessionVersion = undefined;
+        }
       }
 
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.userId as string;
+      if (session.user && token.userId) {
+        session.user.id = String(token.userId);
       }
 
       return session;

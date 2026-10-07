@@ -65,7 +65,7 @@ export async function requestPasswordReset(email: string) {
       resetUrl,
       expiresAt,
     });
-  } catch (error) {
+  } catch {
     await PasswordResetToken.updateOne(
       {
         tokenHash,
@@ -130,6 +130,7 @@ export async function resetPassword({
   const passwordHash = await hashPassword(parsedPassword.data);
 
   user.passwordHash = passwordHash;
+  user.sessionVersion = (user.sessionVersion ?? 1) + 1;
 
   await user.save();
 

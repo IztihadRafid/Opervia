@@ -2,14 +2,25 @@ import mongoose, { Schema, type Document, type Model } from "mongoose";
 
 export interface IUser extends Document {
   organizationId: mongoose.Types.ObjectId;
+
   name: string;
+
   email: string;
+
   passwordHash?: string;
+
   emailVerifiedAt?: Date | null;
+
   lastLoginAt?: Date | null;
+
+  sessionVersion: number;
+
   role: "owner" | "admin" | "member" | "viewer";
+
   status: "active" | "invited" | "suspended";
+
   createdAt: Date;
+
   updatedAt: Date;
 }
 
@@ -37,6 +48,7 @@ const userSchema = new Schema<IUser>(
       trim: true,
       maxlength: 254,
     },
+
     passwordHash: {
       type: String,
       select: false,
@@ -51,6 +63,13 @@ const userSchema = new Schema<IUser>(
       type: Date,
       default: null,
     },
+
+    sessionVersion: {
+      type: Number,
+      default: 1,
+      required: true,
+    },
+
     role: {
       type: String,
       enum: ["owner", "admin", "member", "viewer"],

@@ -10,15 +10,25 @@ export async function getUserForAuthentication(email: string) {
     .select("+passwordHash")
     .lean();
 }
+
+export async function getUserForSession(userId: string) {
+  await connectDB();
+
+  const user = await User.findById(userId)
+    .select("_id status sessionVersion")
+    .lean();
+
+  console.log("SESSION CHECK:", {
+    userId,
+    status: user?.status,
+    sessionVersion: user?.sessionVersion,
+  });
+
+  return user;
+}
+
 export async function updateLastLoginAt(userId: string) {
   await connectDB();
 
-  await User.updateOne(
-    { _id: userId },
-    {
-      $set: {
-        lastLoginAt: new Date(),
-      },
-    },
-  );
+  await User.updateOne({ _id: userId }, { $set: { lastLoginAt: new Date() } });
 }
