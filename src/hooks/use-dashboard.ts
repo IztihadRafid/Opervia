@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
 export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
-
+import { apiClient } from "@/lib/api-client";
 interface DashboardSpendingPoint {
   label: string;
   amount: number;
@@ -88,18 +88,12 @@ interface DashboardResponse {
 async function fetchDashboard(
   range: DashboardRange,
 ): Promise<DashboardResponse> {
-  const response = await fetch(`/api/dashboard?range=${range}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch dashboard data");
-  }
-
-  return response.json();
+  return apiClient<DashboardResponse>(`/api/dashboard?range=${range}`);
 }
 
 export function useDashboard(range: DashboardRange = "12m") {
   return useQuery({
-    queryKey: ["dashboard", range],
+    queryKey: queryKeys.dashboard(range),
     queryFn: () => fetchDashboard(range),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,

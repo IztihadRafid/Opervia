@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-
+import { apiClient } from "@/lib/api-client";
 type AcceptInvitationInput = {
   token: string;
   name: string;
@@ -21,21 +21,13 @@ type AcceptInvitationResponse = {
 async function acceptInvitation(
   input: AcceptInvitationInput,
 ): Promise<AcceptInvitationResponse> {
-  const response = await fetch("/api/invitations/accept", {
+  return apiClient<AcceptInvitationResponse>("/api/invitations/accept", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
   });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to accept invitation.");
-  }
-
-  return result;
 }
 
 export function useAcceptInvitation() {

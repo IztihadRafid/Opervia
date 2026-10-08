@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 type ResendInvitationResponse = {
   success: boolean;
   message?: string;
@@ -15,17 +16,12 @@ type ResendInvitationResponse = {
 async function resendInvitation(
   invitationId: string,
 ): Promise<ResendInvitationResponse> {
-  const response = await fetch(`/api/invitations/resend/${invitationId}`, {
-    method: "POST",
-  });
-
-  const result: ResendInvitationResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to resend invitation.");
-  }
-
-  return result;
+  return apiClient<ResendInvitationResponse>(
+    `/api/invitations/resend/${invitationId}`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 export function useResendInvitation() {
@@ -36,7 +32,7 @@ export function useResendInvitation() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["invitations"],
+        queryKey: queryKeys.invitations.all,
       });
     },
   });

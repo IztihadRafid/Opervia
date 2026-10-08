@@ -1,7 +1,7 @@
 "use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 interface UpdateUserInput {
   userId: string;
   name?: string;
@@ -30,32 +30,22 @@ async function updateUser({
   userId,
   ...data
 }: UpdateUserInput): Promise<UpdateUserResponse> {
-  const response = await fetch(`/api/users/${userId}`, {
+  return apiClient<UpdateUserResponse>(`/api/users/${userId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });
-
-  const result: UpdateUserResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to update user");
-  }
-
-  return result;
 }
 
 export function useUpdateUser() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: updateUser,
-
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["users"],
+        queryKey: queryKeys.users.all,
       });
     },
   });

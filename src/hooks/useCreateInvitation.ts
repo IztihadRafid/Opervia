@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-
+import { apiClient } from "@/lib/api-client";
 type CreateInvitationInput = {
   email: string;
   role: "admin" | "member" | "viewer";
@@ -20,21 +20,13 @@ type CreateInvitationResponse = {
 async function createInvitation(
   input: CreateInvitationInput,
 ): Promise<CreateInvitationResponse> {
-  const response = await fetch("/api/invitations", {
+  return apiClient<CreateInvitationResponse>("/api/invitations", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
   });
-
-  const result: CreateInvitationResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to create invitation.");
-  }
-
-  return result;
 }
 
 export function useCreateInvitation() {

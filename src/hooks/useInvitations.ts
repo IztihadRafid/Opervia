@@ -1,32 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 type InvitationDetails = {
   email: string;
   role: "admin" | "member" | "viewer";
   expiresAt: string;
 };
 
-type InvitationResponse = {
-  success: boolean;
-  message?: string;
-  data?: InvitationDetails;
-};
-
 async function getInvitation(token: string): Promise<InvitationDetails> {
-  const response = await fetch(`/api/invitations/${token}`);
-
-  const result: InvitationResponse = await response.json();
-
-  if (!response.ok || !result.data) {
-    throw new Error(result.message ?? "Invitation is invalid or has expired.");
-  }
-
-  return result.data;
+  return apiClient<InvitationDetails>(`/api/invitations/${token}`);
 }
 
 export function useInvitation(token: string) {
   return useQuery({
-    queryKey: ["invitation", token],
+    queryKey: queryKeys.invitation(token),
     queryFn: () => getInvitation(token),
     enabled: Boolean(token),
     retry: false,
@@ -68,22 +55,16 @@ async function getInvitations({
     limit: String(limit),
   });
 
-  const response = await fetch(`/api/invitations?${searchParams.toString()}`);
-
-  const result: InvitationsResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error("Failed to load invitations.");
-  }
-
-  return result;
+  return apiClient<InvitationsResponse>(
+    `/api/invitations?${searchParams.toString()}`,
+  );
 }
 
 export function useInvitations(options: UseInvitationsOptions = {}) {
   const { page = 1, limit = 25 } = options;
 
   return useQuery({
-    queryKey: ["invitations", { page, limit }],
+    queryKey: queryKeys.invitations.list({ page, limit }),
     queryFn: () => getInvitations({ page, limit }),
     placeholderData: (previousData) => previousData,
   });

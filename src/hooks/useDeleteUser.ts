@@ -1,24 +1,17 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 interface DeleteUserResponse {
   success: boolean;
   message?: string;
 }
 
 async function deleteUser(userId: string): Promise<DeleteUserResponse> {
-  const response = await fetch(`/api/users/${userId}`, {
+  return apiClient<DeleteUserResponse>(`/api/users/${userId}`, {
     method: "DELETE",
   });
-
-  const result: DeleteUserResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to delete user");
-  }
-
-  return result;
 }
 
 export function useDeleteUser() {
@@ -29,7 +22,7 @@ export function useDeleteUser() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["users"],
+        queryKey: queryKeys.users.all,
       });
     },
   });

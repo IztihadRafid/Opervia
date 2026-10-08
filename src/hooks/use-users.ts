@@ -1,7 +1,7 @@
 "use client";
-
+import { apiClient } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
 export interface User {
   _id: string;
   organizationId: string;
@@ -55,18 +55,12 @@ async function fetchUsers(options: UseUsersOptions): Promise<UsersResponse> {
     params.set("status", options.status);
   }
 
-  const response = await fetch(`/api/users?${params.toString()}`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch users");
-  }
-
-  return response.json();
+  return apiClient<UsersResponse>(`/api/users?${params.toString()}`);
 }
 
 export function useUsers(options: UseUsersOptions = {}) {
   return useQuery({
-    queryKey: ["users", options],
+    queryKey: queryKeys.users.list(options),
     queryFn: () => fetchUsers(options),
     placeholderData: (previousData) => previousData,
   });

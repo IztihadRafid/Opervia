@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import { queryKeys } from "@/lib/query-keys";
+import { apiClient } from "@/lib/api-client";
 type RevokeInvitationResponse = {
   success: boolean;
   message?: string;
@@ -8,17 +9,12 @@ type RevokeInvitationResponse = {
 async function revokeInvitation(
   invitationId: string,
 ): Promise<RevokeInvitationResponse> {
-  const response = await fetch(`/api/invitations/revoke/${invitationId}`, {
-    method: "DELETE",
-  });
-
-  const result: RevokeInvitationResponse = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message ?? "Failed to revoke invitation.");
-  }
-
-  return result;
+  return apiClient<RevokeInvitationResponse>(
+    `/api/invitations/revoke/${invitationId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export function useRevokeInvitation() {
@@ -29,7 +25,7 @@ export function useRevokeInvitation() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["invitations"],
+        queryKey: queryKeys.invitations.all,
       });
     },
   });
