@@ -97,5 +97,6 @@ export function useDashboard(range: DashboardRange = "12m") {
     queryFn: () => fetchDashboard(range),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }

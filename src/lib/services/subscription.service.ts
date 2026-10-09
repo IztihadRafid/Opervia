@@ -21,6 +21,9 @@ export interface RenewalIntelligence {
 }
 
 export async function getMonthlySpend(organizationId: string) {
+  if (!mongoose.Types.ObjectId.isValid(organizationId)) {
+    return 0;
+  }
   const result = await Subscription.aggregate([
     {
       $match: {

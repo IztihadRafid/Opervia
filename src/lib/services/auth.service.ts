@@ -18,11 +18,11 @@ export async function getUserForSession(userId: string) {
     .select("_id status sessionVersion")
     .lean();
 
-  console.log("SESSION CHECK:", {
-    userId,
-    status: user?.status,
-    sessionVersion: user?.sessionVersion,
-  });
+  // console.log("SESSION CHECK:", {
+  //   userId,
+  //   status: user?.status,
+  //   sessionVersion: user?.sessionVersion,
+  // });
 
   return user;
 }

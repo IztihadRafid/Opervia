@@ -5,7 +5,10 @@ import {
 } from "@/lib/auth/organization";
 import { connectDB } from "@/lib/db/mongoose";
 import { createUser, getUsers } from "@/lib/services/user.service";
-import { createUserSchema } from "@/lib/validations/user.validation";
+import {
+  createUserSchema,
+  getUsersQuerySchema,
+} from "@/lib/validations/user.validation";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -19,56 +22,32 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
-    const page = Number(searchParams.get("page") ?? 1);
-    const limit = Number(searchParams.get("limit") ?? 20);
-    const statusParam = searchParams.get("status");
-    const search = searchParams.get("search") ?? undefined;
-    const roleParam = searchParams.get("role");
-
-    const validRoles = ["owner", "admin", "member", "viewer"] as const;
-    const validStatuses = ["active", "invited", "suspended"] as const;
-
-    if (
-      roleParam &&
-      !validRoles.includes(roleParam as (typeof validRoles)[number])
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid role",
-        },
-        { status: 400 },
-      );
-    }
-
-    if (
-      statusParam &&
-      !validStatuses.includes(statusParam as (typeof validStatuses)[number])
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid status",
-        },
-        { status: 400 },
-      );
-    }
-
-    const role = roleParam
-      ? (roleParam as (typeof validRoles)[number])
-      : undefined;
-
-    const status = statusParam
-      ? (statusParam as (typeof validStatuses)[number])
-      : undefined;
-
-    const result = await getUsers(organization.organizationId, {
-      page,
-      limit,
-      status,
-      search,
-      role,
+    const parsedQuery = getUsersQuerySchema.safeParse({
+      page: searchParams.get("page") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+      status: searchParams.get("status") ?? undefined,
+      role: searchParams.get("role") ?? undefined,
+      search: searchParams.get("search") ?? undefined,
     });
+
+    if (!parsedQuery.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid query parameters",
+          errors: parsedQuery.error.issues.map((issue) => ({
+            field: issue.path.join("."),
+            message: issue.message,
+          })),
+        },
+        { status: 400 },
+      );
+    }
+
+    const result = await getUsers(
+      organization.organizationId,
+      parsedQuery.data,
+    );
 
     return NextResponse.json({
       success: true,
@@ -133,6 +112,7 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
     if (
       organization.role !== "owner" &&
       (parsed.data.role === "owner" || parsed.data.role === "admin")
@@ -145,6 +125,7 @@ export async function POST(request: NextRequest) {
         { status: 403 },
       );
     }
+
     const user = await createUser(organization.organizationId, {
       ...parsed.data,
       status: "invited",

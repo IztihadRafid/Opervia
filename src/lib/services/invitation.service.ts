@@ -233,24 +233,23 @@ export async function resendInvitation({
     throw new Error("Invitation changed. Please try again");
   }
 
-  const [organization, inviter] = await Promise.all([
-    Organization.findById(organizationId).select("name").lean(),
-    User.findById(reservedInvitation.invitedBy).select("name").lean(),
-  ]);
-
-  if (!organization) {
-    throw new Error("Organization not found");
-  }
-
-  if (!inviter) {
-    throw new Error("Inviter not found");
-  }
-
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-
-  const invitationUrl = `${baseUrl}/invite/${token}`;
-
   try {
+    const [organization, inviter] = await Promise.all([
+      Organization.findById(organizationId).select("name").lean(),
+      User.findById(reservedInvitation.invitedBy).select("name").lean(),
+    ]);
+
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    if (!inviter) {
+      throw new Error("Inviter not found");
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+    const invitationUrl = `${baseUrl}/invite/${token}`;
+
     await sendInvitationEmail({
       to: reservedInvitation.email,
       organizationName: organization.name,
@@ -265,6 +264,8 @@ export async function resendInvitation({
         _id: invitationId,
         organizationId,
         tokenHash,
+        acceptedAt: null,
+        revokedAt: null,
       },
       {
         $set: {
@@ -285,6 +286,8 @@ export async function resendInvitation({
         _id: invitationId,
         organizationId,
         tokenHash,
+        acceptedAt: null,
+        revokedAt: null,
       },
       {
         $set: {

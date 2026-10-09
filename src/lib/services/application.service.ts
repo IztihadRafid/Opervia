@@ -39,16 +39,18 @@ export async function getApplications(
   }
 
   if (options.search) {
+    const escapedSearch = options.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     filter.$or = [
       {
         name: {
-          $regex: options.search,
+          $regex: escapedSearch,
           $options: "i",
         },
       },
       {
         vendor: {
-          $regex: options.search,
+          $regex: escapedSearch,
           $options: "i",
         },
       },
@@ -171,5 +173,22 @@ export async function updateApplication(
     usersCount: application.usersCount,
     createdAt: application.createdAt.toISOString(),
     updatedAt: application.updatedAt.toISOString(),
+  };
+}
+export async function deleteApplication(
+  organizationId: string,
+  applicationId: string,
+) {
+  const application = await Application.findOneAndDelete({
+    _id: applicationId,
+    organizationId,
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  return {
+    _id: application._id.toString(),
   };
 }

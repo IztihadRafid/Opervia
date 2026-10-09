@@ -106,7 +106,17 @@ invitationSchema.index({
   email: 1,
   acceptedAt: 1,
 });
-
+invitationSchema.index(
+  {
+    organizationId: 1,
+    acceptedAt: 1,
+    createdAt: -1,
+    _id: -1,
+  },
+  {
+    name: "organizationId_1_acceptedAt_1_createdAt_-1__id_-1",
+  },
+);
 const Invitation: Model<IInvitation> =
   mongoose.models.Invitation ||
   mongoose.model<IInvitation>("Invitation", invitationSchema);

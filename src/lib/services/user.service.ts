@@ -26,15 +26,14 @@ export async function getUsers(
   if (options.role) {
     filter.role = options.role;
   }
-  if (options.search?.trim()) {
-    const search = options.search.trim();
+  if (options.search) {
+    const search = options.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
     filter.$or = [
       { name: { $regex: search, $options: "i" } },
       { email: { $regex: search, $options: "i" } },
     ];
   }
-
   const [users, total] = await Promise.all([
     User.find(filter)
       .sort({ createdAt: -1, _id: -1 })

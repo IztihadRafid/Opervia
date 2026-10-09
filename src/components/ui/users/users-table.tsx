@@ -36,12 +36,14 @@ function getInitials(name: string) {
     .join("");
 }
 
+const dateFormatter = new Intl.DateTimeFormat("en", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(date));
+  return dateFormatter.format(new Date(date));
 }
 
 export function UsersTable({

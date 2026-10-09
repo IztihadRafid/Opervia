@@ -79,7 +79,7 @@ const applicationSchema = new Schema<IApplication>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 applicationSchema.index({
@@ -92,6 +92,16 @@ applicationSchema.index({
   category: 1,
 });
 
+applicationSchema.index(
+  {
+    organizationId: 1,
+    createdAt: -1,
+    _id: -1,
+  },
+  {
+    name: "organizationId_1_createdAt_-1__id_-1",
+  },
+);
 const Application: Model<IApplication> =
   mongoose.models.Application ||
   mongoose.model<IApplication>("Application", applicationSchema);

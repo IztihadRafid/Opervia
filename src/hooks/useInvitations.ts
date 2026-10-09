@@ -15,6 +15,8 @@ export function useInvitation(token: string) {
   return useQuery({
     queryKey: queryKeys.invitation(token),
     queryFn: () => getInvitation(token),
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
     enabled: Boolean(token),
     retry: false,
   });
@@ -62,10 +64,11 @@ async function getInvitations({
 
 export function useInvitations(options: UseInvitationsOptions = {}) {
   const { page = 1, limit = 25 } = options;
-
   return useQuery({
     queryKey: queryKeys.invitations.list({ page, limit }),
     queryFn: () => getInvitations({ page, limit }),
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 }

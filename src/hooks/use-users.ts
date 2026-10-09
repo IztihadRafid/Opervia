@@ -2,6 +2,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
+
 export interface User {
   _id: string;
   organizationId: string;
@@ -13,7 +14,7 @@ export interface User {
   updatedAt: string;
 }
 
-interface UsersResponse {
+export interface UsersResponse {
   success: boolean;
   data: User[];
   pagination: {
@@ -24,7 +25,7 @@ interface UsersResponse {
   };
 }
 
-interface UseUsersOptions {
+export interface UseUsersOptions {
   page?: number;
   limit?: number;
   search?: string;
@@ -32,7 +33,9 @@ interface UseUsersOptions {
   status?: User["status"];
 }
 
-async function fetchUsers(options: UseUsersOptions): Promise<UsersResponse> {
+export async function fetchUsers(
+  options: UseUsersOptions,
+): Promise<UsersResponse> {
   const params = new URLSearchParams();
 
   if (options.page) {
@@ -62,6 +65,8 @@ export function useUsers(options: UseUsersOptions = {}) {
   return useQuery({
     queryKey: queryKeys.users.list(options),
     queryFn: () => fetchUsers(options),
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 }

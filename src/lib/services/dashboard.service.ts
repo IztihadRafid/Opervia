@@ -200,38 +200,32 @@ async function getSpendingAnalytics(
 
   const now = new Date();
   const rangeStart = getRangeStart(range, now);
-
   const buckets = createSpendingBuckets(range, now);
-
   const organizationObjectId = new mongoose.Types.ObjectId(organizationId);
 
-  const subscriptions = await Subscription.aggregate([
+  const bucketDocuments = buckets.map((bucket) => ({
+    key: bucket.key,
+    label: bucket.label,
+    start: bucket.start,
+    end: bucket.end,
+  }));
+
+  const spendingTotals = await Subscription.aggregate<{
+    _id: string;
+    label: string;
+    amount: number;
+  }>([
     {
       $match: {
         organizationId: organizationObjectId,
-
-        startDate: {
-          $lt: now,
-        },
-
+        startDate: { $lt: now },
         $or: [
-          {
-            endDate: {
-              $exists: false,
-            },
-          },
-          {
-            endDate: null,
-          },
-          {
-            endDate: {
-              $gte: rangeStart,
-            },
-          },
+          { endDate: { $exists: false } },
+          { endDate: null },
+          { endDate: { $gte: rangeStart } },
         ],
       },
     },
-
     {
       $project: {
         startDate: 1,
@@ -240,33 +234,22 @@ async function getSpendingAnalytics(
         billingCycle: 1,
       },
     },
-
     {
       $addFields: {
         monthlyAmount: {
           $switch: {
             branches: [
               {
-                case: {
-                  $eq: ["$billingCycle", "monthly"],
-                },
+                case: { $eq: ["$billingCycle", "monthly"] },
                 then: "$amount",
               },
               {
-                case: {
-                  $eq: ["$billingCycle", "quarterly"],
-                },
-                then: {
-                  $divide: ["$amount", 3],
-                },
+                case: { $eq: ["$billingCycle", "quarterly"] },
+                then: { $divide: ["$amount", 3] },
               },
               {
-                case: {
-                  $eq: ["$billingCycle", "yearly"],
-                },
-                then: {
-                  $divide: ["$amount", 12],
-                },
+                case: { $eq: ["$billingCycle", "yearly"] },
+                then: { $divide: ["$amount", 12] },
               },
             ],
             default: 0,
@@ -274,25 +257,55 @@ async function getSpendingAnalytics(
         },
       },
     },
+    {
+      $project: {
+        bucketAmounts: {
+          $map: {
+            input: { $literal: bucketDocuments },
+            as: "bucket",
+            in: {
+              key: "$$bucket.key",
+              label: "$$bucket.label",
+              amount: {
+                $cond: [
+                  {
+                    $and: [
+                      { $lt: ["$startDate", "$$bucket.end"] },
+                      {
+                        $or: [
+                          {
+                            $eq: [{ $ifNull: ["$endDate", null] }, null],
+                          },
+                          { $gte: ["$endDate", "$$bucket.start"] },
+                        ],
+                      },
+                    ],
+                  },
+                  "$monthlyAmount",
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      },
+    },
+    { $unwind: "$bucketAmounts" },
+    {
+      $group: {
+        _id: "$bucketAmounts.key",
+        label: { $first: "$bucketAmounts.label" },
+        amount: { $sum: "$bucketAmounts.amount" },
+      },
+    },
   ]);
 
+  const totalsByBucket = new Map(
+    spendingTotals.map((item) => [item._id, item.amount]),
+  );
+
   return buckets.map((bucket) => {
-    const amount = subscriptions.reduce((total, subscription) => {
-      const startDate = new Date(subscription.startDate);
-
-      const endDate = subscription.endDate
-        ? new Date(subscription.endDate)
-        : null;
-
-      const isActiveDuringBucket =
-        startDate < bucket.end && (!endDate || endDate >= bucket.start);
-
-      if (!isActiveDuringBucket) {
-        return total;
-      }
-
-      return total + Number(subscription.monthlyAmount ?? 0);
-    }, 0);
+    const amount = totalsByBucket.get(bucket.key) ?? 0;
 
     return {
       label: bucket.label,

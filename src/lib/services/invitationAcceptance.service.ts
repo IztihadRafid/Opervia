@@ -45,7 +45,9 @@ export async function acceptInvitation({
     acceptedAt: null,
     revokedAt: null,
     expiresAt: { $gt: new Date() },
-  }).select("+tokenHash");
+  })
+    .select("+tokenHash")
+    .lean();
 
   if (!invitation) {
     throw new Error("Invitation is invalid or has expired");
@@ -53,28 +55,56 @@ export async function acceptInvitation({
 
   const existingUser = await User.findOne({
     email: invitation.email,
-  });
+  })
+    .select("_id")
+    .lean();
 
   if (existingUser) {
     throw new Error("A user with this email already exists");
   }
 
   const passwordHash = await hashPassword(parsedPassword.data);
-
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
+    const now = new Date();
+
+    // Claim the invitation inside the transaction.
+    // Only an invitation that is still eligible can be accepted.
+    const claimedInvitation = await Invitation.findOneAndUpdate(
+      {
+        _id: invitation._id,
+        tokenHash,
+        acceptedAt: null,
+        revokedAt: null,
+        expiresAt: { $gt: now },
+      },
+      {
+        $set: {
+          acceptedAt: now,
+        },
+      },
+      {
+        new: true,
+        session,
+      },
+    );
+
+    if (!claimedInvitation) {
+      throw new Error("Invitation is invalid, expired, or already used");
+    }
+
     const [user] = await User.create(
       [
         {
-          organizationId: invitation.organizationId,
+          organizationId: claimedInvitation.organizationId,
           name: trimmedName,
-          email: invitation.email,
+          email: claimedInvitation.email,
           passwordHash,
-          emailVerifiedAt: new Date(),
-          role: invitation.role,
+          emailVerifiedAt: now,
+          role: claimedInvitation.role,
           status: "active",
         },
       ],
@@ -85,25 +115,21 @@ export async function acceptInvitation({
       [
         {
           userId: user._id,
-          organizationId: invitation.organizationId,
-          role: invitation.role,
+          organizationId: claimedInvitation.organizationId,
+          role: claimedInvitation.role,
           status: "active",
         },
       ],
       { session },
     );
 
-    invitation.acceptedAt = new Date();
-
-    await invitation.save({ session });
-
     await session.commitTransaction();
 
     return {
       userId: user._id.toString(),
-      organizationId: invitation.organizationId.toString(),
-      role: invitation.role,
-      email: invitation.email,
+      organizationId: claimedInvitation.organizationId.toString(),
+      role: claimedInvitation.role,
+      email: claimedInvitation.email,
     };
   } catch (error: unknown) {
     await session.abortTransaction();

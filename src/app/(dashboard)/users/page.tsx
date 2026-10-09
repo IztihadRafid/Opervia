@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useUsers, type User } from "@/hooks/use-users";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { fetchUsers, useUsers, type User } from "@/hooks/use-users";
 import { UsersTable } from "@/components/ui/users/users-table";
 import { UsersPagination } from "@/components/ui/users/users-pagination";
 import { EditUserModal } from "@/components/ui/users/editUserModal";
@@ -9,34 +10,143 @@ import { DeleteUserDialog } from "@/components/ui/users/deleteUserDialog";
 import { InviteUserModal } from "@/components/ui/users/inviteUserModal";
 import { InvitationsTable } from "@/components/ui/users/invitationsTable";
 import { useInvitations } from "@/hooks/useInvitations";
-
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 type UsersView = "users" | "invitations";
 
 export default function UsersPage() {
-  const [view, setView] = useState<UsersView>("users");
-
-  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") ?? "";
+  const initialRole = searchParams.get("role") ?? "";
+  const initialStatus = searchParams.get("status") ?? "";
+  const [view, setView] = useState<UsersView>(
+    searchParams.get("view") === "invitations" ? "invitations" : "users",
+  );
+  const [search, setSearch] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [role, setRole] = useState<
     "owner" | "admin" | "member" | "viewer" | ""
-  >("");
-  const [status, setStatus] = useState<"active" | "invited" | "suspended" | "">(
-    "",
+  >(
+    ["owner", "admin", "member", "viewer"].includes(initialRole)
+      ? (initialRole as "owner" | "admin" | "member" | "viewer")
+      : "",
   );
-
-  const [page, setPage] = useState(1);
-  const [invitationPage, setInvitationPage] = useState(1);
-
+  const [status, setStatus] = useState<"active" | "invited" | "suspended" | "">(
+    ["active", "invited", "suspended"].includes(initialStatus)
+      ? (initialStatus as "active" | "invited" | "suspended")
+      : "",
+  );
+  const parsePage = (value: string | null) => {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= 100_000
+      ? parsed
+      : 1;
+  };
+  const [page, setPage] = useState(() => parsePage(searchParams.get("page")));
+  const [invitationPage, setInvitationPage] = useState(() =>
+    parsePage(searchParams.get("invitationPage")),
+  );
   const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
 
+    return () => clearTimeout(timeoutId);
+  }, [search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    const values: Record<string, string> = {
+      view,
+      page: String(page),
+      invitationPage: String(invitationPage),
+      search,
+      role,
+      status,
+    };
+
+    for (const [key, value] of Object.entries(values)) {
+      if (
+        (key === "view" && value === "users") ||
+        (key === "page" && value === "1") ||
+        (key === "invitationPage" && value === "1") ||
+        (key === "search" && !value.trim()) ||
+        ((key === "role" || key === "status") && !value)
+      ) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    }
+
+    const query = params.toString();
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+
+    const currentUrl = `${pathname}${window.location.search}`;
+
+    if (nextUrl !== currentUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [
+    view,
+    page,
+    invitationPage,
+    search,
+    role,
+    status,
+    pathname,
+    router,
+    searchParams,
+  ]);
   const usersQuery = useUsers({
     page,
-    search,
+    search: debouncedSearch,
     role: role || undefined,
     status: status || undefined,
   });
 
+  useEffect(() => {
+    const totalPages = usersQuery.data?.pagination.totalPages ?? 1;
+
+    if (page >= totalPages) {
+      return;
+    }
+
+    void queryClient
+      .query({
+        queryKey: queryKeys.users.list({
+          page: page + 1,
+          search: debouncedSearch,
+          role: role || undefined,
+          status: status || undefined,
+        }),
+        queryFn: () =>
+          fetchUsers({
+            page: page + 1,
+            search: debouncedSearch,
+            role: role || undefined,
+            status: status || undefined,
+          }),
+        staleTime: 30 * 1000,
+      })
+      .catch(() => {
+        // Prefetch is best-effort; it must not affect the current page.
+      });
+  }, [
+    page,
+    debouncedSearch,
+    role,
+    status,
+    usersQuery.data?.pagination.totalPages,
+    queryClient,
+  ]);
   const invitationsQuery = useInvitations({
     page: invitationPage,
     limit: 25,
@@ -239,13 +349,22 @@ export default function UsersPage() {
               </select>
             </div>
           </div>
+          {usersQuery.isFetching && (
+            <p
+              className="px-1 text-xs text-muted-foreground"
+              role="status"
+              aria-live="polite"
+            >
+              Updating users…
+            </p>
+          )}
           <UsersTable
             users={data?.data ?? []}
             onEditUser={(user) => setEditingUser(user)}
             onDeleteUser={(user) => setDeletingUser(user)}
           />
 
-          {data?.data.length === 0 && (search || role || status) && (
+          {data?.data.length === 0 && (debouncedSearch || role || status) && (
             <div className="flex justify-center">
               <button
                 type="button"

@@ -22,7 +22,6 @@ export function useRevokeInvitation() {
 
   return useMutation({
     mutationFn: revokeInvitation,
-
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.invitations.all,

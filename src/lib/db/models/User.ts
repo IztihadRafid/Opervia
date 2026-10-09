@@ -2,25 +2,15 @@ import mongoose, { Schema, type Document, type Model } from "mongoose";
 
 export interface IUser extends Document {
   organizationId: mongoose.Types.ObjectId;
-
   name: string;
-
   email: string;
-
   passwordHash?: string;
-
   emailVerifiedAt?: Date | null;
-
   lastLoginAt?: Date | null;
-
   sessionVersion: number;
-
   role: "owner" | "admin" | "member" | "viewer";
-
   status: "active" | "invited" | "suspended";
-
   createdAt: Date;
-
   updatedAt: Date;
 }
 
@@ -88,20 +78,14 @@ const userSchema = new Schema<IUser>(
   },
 );
 
+userSchema.index({ email: 1 }, { unique: true });
+
+userSchema.index({ organizationId: 1, status: 1 });
+
 userSchema.index(
-  {
-    email: 1,
-  },
-  {
-    unique: true,
-  },
+  { organizationId: 1, createdAt: -1, _id: -1 },
+  { name: "organizationId_1_createdAt_-1__id_-1" },
 );
-
-userSchema.index({
-  organizationId: 1,
-  status: 1,
-});
-
 const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 

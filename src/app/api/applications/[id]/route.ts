@@ -5,11 +5,11 @@ import {
   UnauthorizedError,
   requireOrganizationMembership,
 } from "@/lib/auth/organization";
+import { updateApplicationSchema } from "@/lib/validations/application.validation";
 import {
+  updateApplication,
   deleteApplication,
-  updateApplicationSchema,
-} from "@/lib/validations/application.validation";
-import { updateApplication } from "@/lib/services/application.service";
+} from "@/lib/services/application.service";
 import { CreateApplicationResponse } from "../../../../../types/api";
 import { connectDB } from "@/lib/db/mongoose";
 
