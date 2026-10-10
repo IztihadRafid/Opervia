@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
+import { createActivity } from "@/lib/services/activity.service";
 import {
   ForbiddenError,
   UnauthorizedError,
@@ -65,7 +66,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 404 },
       );
     }
-
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "application_updated",
+        title: "Application updated",
+        description: `${application.name} was updated.`,
+        entityId: application._id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log application update:", activityError);
+    }
     const response: CreateApplicationResponse = {
       success: true,
       application,
@@ -135,6 +147,19 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         },
         { status: 404 },
       );
+    }
+
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "application_deleted",
+        title: "Application deleted",
+        description: "An application was deleted.",
+        entityId: application._id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log application deletion:", activityError);
     }
 
     return NextResponse.json({

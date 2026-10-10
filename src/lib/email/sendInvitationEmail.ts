@@ -32,9 +32,16 @@ export async function sendInvitationEmail({
     throw new Error("EMAIL_FROM is not configured");
   }
 
+  const testEmail =
+    process.env.NODE_ENV === "development"
+      ? process.env.TEST_EMAIL?.trim()
+      : undefined;
+
+  const recipient = testEmail || to;
+
   const result = await resend.emails.send({
     from,
-    to,
+    to: recipient,
     subject,
     html,
     text,

@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { createActivity } from "@/lib/services/activity.service";
 import {
   ForbiddenError,
   UnauthorizedError,
   requireOrganizationMembership,
 } from "@/lib/auth/organization";
-
 import {
   createInvitation,
   getInvitations,
 } from "@/lib/services/invitation.service";
-
 import { createInvitationSchema } from "@/lib/validations/invitation.validation";
-
 import { EmailDeliveryError } from "@/lib/email/email-error";
 
 export async function POST(request: NextRequest) {
@@ -23,7 +20,6 @@ export async function POST(request: NextRequest) {
     );
 
     const body = await request.json();
-
     const parsed = createInvitationSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -52,7 +48,44 @@ export async function POST(request: NextRequest) {
       email: parsed.data.email,
       role: parsed.data.role,
       invitedBy: organization.userId,
+    }).catch(async (error: unknown) => {
+      if (
+        error instanceof EmailDeliveryError &&
+        error.invitationId &&
+        error.email
+      ) {
+        try {
+          await createActivity({
+            organizationId: organization.organizationId,
+            userId: organization.userId,
+            type: "user_invited",
+            title: "User invited",
+            description: `An invitation was created for ${error.email}, but the email could not be delivered.`,
+            entityId: error.invitationId,
+          });
+        } catch (activityError) {
+          console.error(
+            "Failed to log invitation creation after email failure:",
+            activityError,
+          );
+        }
+      }
+
+      throw error;
     });
+
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "user_invited",
+        title: "User invited",
+        description: `An invitation was created for ${invitation.email}.`,
+        entityId: invitation._id.toString(),
+      });
+    } catch (activityError) {
+      console.error("Failed to log invitation creation:", activityError);
+    }
 
     const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
@@ -76,20 +109,14 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
@@ -99,10 +126,7 @@ export async function POST(request: NextRequest) {
       error.message === "An active invitation already exists for this email"
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 409 },
       );
     }
@@ -112,10 +136,7 @@ export async function POST(request: NextRequest) {
       error.message === "This user is already a member of the organization"
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 409 },
       );
     }

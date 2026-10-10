@@ -133,7 +133,10 @@ export async function createInvitation({
       },
     );
 
-    throw new EmailDeliveryError(emailError);
+    throw new EmailDeliveryError(emailError, {
+      invitationId: invitation._id.toString(),
+      email: invitation.email,
+    });
   }
 
   const updatedInvitation = await Invitation.findOne({

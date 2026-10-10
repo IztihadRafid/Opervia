@@ -1,4 +1,5 @@
 import { connectDB } from "@/lib/db/mongoose";
+import { createActivity } from "@/lib/services/activity.service";
 import {
   ForbiddenError,
   UnauthorizedError,
@@ -118,7 +119,18 @@ export async function POST(request: Request) {
       organization.organizationId,
       result.data,
     );
-
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "application_added",
+        title: "Application added",
+        description: `${application.name} was added to your applications.`,
+        entityId: application._id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log application creation:", activityError);
+    }
     const response: CreateApplicationResponse = {
       success: true,
       application,

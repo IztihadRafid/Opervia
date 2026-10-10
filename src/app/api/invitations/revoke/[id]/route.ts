@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import mongoose from "mongoose";
-
 import {
   ForbiddenError,
   UnauthorizedError,
   requireOrganizationMembership,
 } from "@/lib/auth/organization";
-
 import { revokeInvitation } from "@/lib/services/invitation.service";
+import { createActivity } from "@/lib/services/activity.service";
 
 export async function DELETE(
   _request: NextRequest,
@@ -32,10 +30,23 @@ export async function DELETE(
       );
     }
 
-    await revokeInvitation({
+    const invitation = await revokeInvitation({
       organizationId: organization.organizationId,
       invitationId: id,
     });
+
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "invitation_revoked",
+        title: "Invitation revoked",
+        description: `The invitation for ${invitation.email} was revoked.`,
+        entityId: invitation._id.toString(),
+      });
+    } catch (activityError) {
+      console.error("Failed to log invitation revocation:", activityError);
+    }
 
     return NextResponse.json({
       success: true,
