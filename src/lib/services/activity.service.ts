@@ -1,11 +1,13 @@
 import mongoose from "mongoose";
 
 import Activity from "@/lib/db/models/Activity";
-
 export const activityTypes = [
   "application_added",
   "application_updated",
   "application_deleted",
+  "subscription_added",
+  "subscription_updated",
+  "subscription_deleted",
   "subscription_renewed",
   "user_invited",
   "invitation_revoked",

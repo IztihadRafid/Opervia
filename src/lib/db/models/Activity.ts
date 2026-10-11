@@ -4,12 +4,14 @@ export const activityTypes = [
   "application_added",
   "application_updated",
   "application_deleted",
+  "subscription_added",
+  "subscription_updated",
+  "subscription_deleted",
   "subscription_renewed",
   "user_invited",
   "invitation_revoked",
   "payment_processed",
 ] as const;
-
 export type ActivityType = (typeof activityTypes)[number];
 
 export interface IActivity extends Document {
