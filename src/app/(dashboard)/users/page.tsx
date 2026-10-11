@@ -1,5 +1,5 @@
 "use client";
-
+import { useOrganization } from "@/components/providers/organization-provider";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { fetchUsers, useUsers, type User } from "@/hooks/use-users";
@@ -27,6 +27,8 @@ export default function UsersPage() {
   );
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+  const { selectedOrganization } = useOrganization();
+  const organizationId = selectedOrganization?.id;
   const [role, setRole] = useState<
     "owner" | "admin" | "member" | "viewer" | ""
   >(
@@ -121,12 +123,15 @@ export default function UsersPage() {
 
     void queryClient
       .query({
-        queryKey: queryKeys.users.list({
-          page: page + 1,
-          search: debouncedSearch,
-          role: role || undefined,
-          status: status || undefined,
-        }),
+        queryKey: queryKeys.users.list(
+          {
+            page: page + 1,
+            search: debouncedSearch,
+            role: role || undefined,
+            status: status || undefined,
+          },
+          organizationId,
+        ),
         queryFn: () =>
           fetchUsers({
             page: page + 1,
@@ -146,6 +151,7 @@ export default function UsersPage() {
     status,
     usersQuery.data?.pagination.totalPages,
     queryClient,
+    organizationId,
   ]);
   const invitationsQuery = useInvitations({
     page: invitationPage,

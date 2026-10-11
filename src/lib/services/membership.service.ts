@@ -20,3 +20,17 @@ export async function getMembership(userId: string, organizationId: string) {
     .populate("organizationId", "name slug")
     .lean();
 }
+
+export async function getMembershipsForUser(userId: string) {
+  await connectDB();
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return [];
+  }
+  return Membership.find({
+    userId,
+    status: "active",
+  })
+    .populate("organizationId", "name slug")
+    .sort({ createdAt: 1, _id: 1 })
+    .lean();
+}

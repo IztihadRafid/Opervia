@@ -48,9 +48,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-    );
+    const organization = await requireOrganizationMembership();
     const application = await updateApplication(
       organization.organizationId,
       id,
@@ -131,9 +129,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-    );
+    const organization = await requireOrganizationMembership();
     const application = await deleteApplication(
       organization.organizationId,
       id,

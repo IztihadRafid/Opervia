@@ -13,10 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "viewer",
-    );
+    const organization = await requireOrganizationMembership("viewer");
 
     await connectDB();
 
@@ -88,10 +85,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "admin",
-    );
+    const organization = await requireOrganizationMembership("admin");
 
     await connectDB();
 

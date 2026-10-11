@@ -14,10 +14,7 @@ import { EmailDeliveryError } from "@/lib/email/email-error";
 
 export async function POST(request: NextRequest) {
   try {
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "admin",
-    );
+    const organization = await requireOrganizationMembership("admin");
 
     const body = await request.json();
     const parsed = createInvitationSchema.safeParse(body);
@@ -168,10 +165,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "member",
-    );
+    const organization = await requireOrganizationMembership("member");
 
     const searchParams = request.nextUrl.searchParams;
 

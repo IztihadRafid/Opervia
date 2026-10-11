@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { auth } from "@/auth";
+import { headers } from "next/headers";
 import { getMembership } from "@/lib/services/membership.service";
 
 const roleHierarchy = {
@@ -25,7 +27,6 @@ export class ForbiddenError extends Error {
 }
 
 export async function requireOrganizationMembership(
-  organizationId: string,
   minimumRole?: OrganizationRole,
 ) {
   const session = await auth();
@@ -34,23 +35,38 @@ export async function requireOrganizationMembership(
     throw new UnauthorizedError();
   }
 
-  const membership = await getMembership(session.user.id, organizationId);
+  const requestHeaders = await headers();
+  const selectedOrganizationId = requestHeaders.get("x-organization-id");
+
+  if (
+    !selectedOrganizationId ||
+    !mongoose.Types.ObjectId.isValid(selectedOrganizationId)
+  ) {
+    throw new ForbiddenError("A valid organization selection is required");
+  }
+
+  const membership = await getMembership(
+    session.user.id,
+    selectedOrganizationId,
+  );
 
   if (!membership) {
     throw new ForbiddenError();
   }
 
+  const userRole = membership.role as OrganizationRole;
+
   if (
-    minimumRole &&
-    roleHierarchy[membership.role as OrganizationRole] <
-      roleHierarchy[minimumRole]
+    !(userRole in roleHierarchy) ||
+    (minimumRole !== undefined &&
+      roleHierarchy[userRole] < roleHierarchy[minimumRole])
   ) {
     throw new ForbiddenError();
   }
 
   return {
     userId: session.user.id,
-    organizationId,
+    organizationId: selectedOrganizationId,
     role: membership.role,
     membership,
   };

@@ -1,6 +1,5 @@
 import PasswordResetToken from "@/lib/db/models/PasswordResetToken";
 import User from "@/lib/db/models/User";
-
 import {
   generatePasswordResetToken,
   hashPasswordResetToken,
@@ -95,7 +94,7 @@ export async function resetPassword({
 }) {
   await connectDB();
 
-  if (!token || token.length !== 64) {
+  if (!token || token.length !== 64 || !/^[a-fA-F0-9]{64}$/.test(token)) {
     throw new Error("Invalid or expired password reset token");
   }
 
@@ -108,14 +107,15 @@ export async function resetPassword({
   }
 
   const tokenHash = hashPasswordResetToken(token);
+  const now = new Date();
 
   const resetToken = await PasswordResetToken.findOne({
     tokenHash,
     usedAt: null,
     expiresAt: {
-      $gt: new Date(),
+      $gt: now,
     },
-  }).select("+tokenHash");
+  });
 
   if (!resetToken) {
     throw new Error("Invalid or expired password reset token");
@@ -126,26 +126,40 @@ export async function resetPassword({
   if (!user || user.status !== "active") {
     throw new Error("Invalid or expired password reset token");
   }
-
   const passwordHash = await hashPassword(parsedPassword.data);
+  const claimedToken = await PasswordResetToken.findOneAndUpdate(
+    {
+      _id: resetToken._id,
+      tokenHash,
+      usedAt: null,
+      expiresAt: {
+        $gt: new Date(),
+      },
+    },
+    {
+      $set: {
+        usedAt: new Date(),
+      },
+    },
+    {
+      new: true,
+    },
+  );
+
+  if (!claimedToken) {
+    throw new Error("Invalid or expired password reset token");
+  }
 
   user.passwordHash = passwordHash;
   user.sessionVersion = (user.sessionVersion ?? 1) + 1;
 
   await user.save();
 
-  resetToken.usedAt = new Date();
-
-  await resetToken.save();
-
-  /* Invalidate any other unused reset tokens belonging to this user. */
+  // Invalidate any other unused reset tokens belonging to this user.
   await PasswordResetToken.updateMany(
     {
       userId: user._id,
       usedAt: null,
-      _id: {
-        $ne: resetToken._id,
-      },
     },
     {
       $set: {

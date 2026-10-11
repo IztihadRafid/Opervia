@@ -1,3 +1,5 @@
+"use client";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { apiClient } from "@/lib/api-client";
@@ -63,10 +65,14 @@ async function getInvitations({
 }
 
 export function useInvitations(options: UseInvitationsOptions = {}) {
+  const { selectedOrganization } = useOrganization();
+  const organizationId = selectedOrganization?.id;
   const { page = 1, limit = 25 } = options;
+
   return useQuery({
-    queryKey: queryKeys.invitations.list({ page, limit }),
+    queryKey: queryKeys.invitations.list({ page, limit }, organizationId),
     queryFn: () => getInvitations({ page, limit }),
+    enabled: Boolean(organizationId),
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,

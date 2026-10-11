@@ -10,14 +10,13 @@ import { getActivitiesSchema } from "@/lib/validations/activity.validation";
 
 import { connectDB } from "@/lib/db/mongoose";
 
-const DEMO_ORGANIZATION_ID = "6ac0c5cc8e734b2c3c24d600";
 
 export async function GET(request: Request) {
   try {
     await connectDB();
 
     const organization =
-      await requireOrganizationMembership(DEMO_ORGANIZATION_ID);
+      await requireOrganizationMembership();
 
     const url = new URL(request.url);
 

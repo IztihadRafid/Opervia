@@ -1,5 +1,5 @@
 "use client";
-
+import { useOrganization } from "@/components/providers/organization-provider";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
@@ -92,9 +92,13 @@ async function fetchDashboard(
 }
 
 export function useDashboard(range: DashboardRange = "12m") {
+  const { selectedOrganization } = useOrganization();
+  const organizationId = selectedOrganization?.id;
+
   return useQuery({
-    queryKey: queryKeys.dashboard(range),
+    queryKey: queryKeys.dashboard(range, organizationId),
     queryFn: () => fetchDashboard(range),
+    enabled: Boolean(organizationId),
     staleTime: 60 * 1000,
     gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,

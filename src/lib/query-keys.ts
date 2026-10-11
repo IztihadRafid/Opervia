@@ -1,5 +1,4 @@
 export type DashboardQueryRange = "7d" | "30d" | "90d" | "6m" | "12m";
-
 export type UsersQueryFilters = {
   page?: number;
   limit?: number;
@@ -7,21 +6,21 @@ export type UsersQueryFilters = {
   role?: "owner" | "admin" | "member" | "viewer";
   status?: "active" | "invited" | "suspended";
 };
-
 export type InvitationsQueryFilters = {
   page?: number;
   limit?: number;
 };
-
+const organizationScope = (organizationId?: string) =>
+  organizationId ?? "no-organization-selected";
 export const queryKeys = {
-  dashboard: (range: DashboardQueryRange) => ["dashboard", range] as const,
-
+  dashboard: (range: DashboardQueryRange, organizationId?: string) =>
+    ["dashboard", organizationScope(organizationId), range] as const,
   users: {
     all: ["users"] as const,
-
-    list: (filters: UsersQueryFilters = {}) =>
+    list: (filters: UsersQueryFilters = {}, organizationId?: string) =>
       [
         "users",
+        organizationScope(organizationId),
         {
           page: filters.page,
           limit: filters.limit,
@@ -31,13 +30,12 @@ export const queryKeys = {
         },
       ] as const,
   },
-
   invitations: {
     all: ["invitations"] as const,
-
-    list: (filters: InvitationsQueryFilters = {}) =>
+    list: (filters: InvitationsQueryFilters = {}, organizationId?: string) =>
       [
         "invitations",
+        organizationScope(organizationId),
         {
           page: filters.page,
           limit: filters.limit,
@@ -49,13 +47,13 @@ export const queryKeys = {
 
   applications: {
     all: ["applications"] as const,
-    list: (filters: Record<string, unknown> = {}) =>
-      ["applications", filters] as const,
+    list: (filters: Record<string, unknown> = {}, organizationId?: string) =>
+      ["applications", organizationScope(organizationId), filters] as const,
   },
 
   subscriptions: {
     all: ["subscriptions"] as const,
-    list: (filters: Record<string, unknown> = {}) =>
-      ["subscriptions", filters] as const,
+    list: (filters: Record<string, unknown> = {}, organizationId?: string) =>
+      ["subscriptions", organizationScope(organizationId), filters] as const,
   },
 };

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { OrganizationProvider } from "@/components/providers/organization-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { redirect } from "next/navigation";
@@ -19,15 +20,17 @@ export default async function DashboardLayout({
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <AppSidebar />
+        <OrganizationProvider>
+          <AppSidebar />
 
-        <SidebarInset>
-          <AppHeader />
+          <SidebarInset>
+            <AppHeader />
 
-          <main className="flex-1">
-            <div className="container mx-auto p-6">{children}</div>
-          </main>
-        </SidebarInset>
+            <main className="flex-1">
+              <div className="container mx-auto p-6">{children}</div>
+            </main>
+          </SidebarInset>
+        </OrganizationProvider>
       </SidebarProvider>
     </TooltipProvider>
   );

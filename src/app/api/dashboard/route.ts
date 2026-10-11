@@ -25,10 +25,7 @@ export async function GET(request: NextRequest) {
       ? (rangeParam as DashboardRange)
       : "12m";
 
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "viewer",
-    );
+    const organization = await requireOrganizationMembership("viewer");
 
     await connectDB();
 

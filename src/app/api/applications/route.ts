@@ -42,9 +42,7 @@ export async function GET(request: Request) {
 
     const { page, limit, status, search } = queryResult.data;
 
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-    );
+    const organization = await requireOrganizationMembership();
 
     const result = await getApplications(organization.organizationId, {
       page,
@@ -111,9 +109,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-    );
+    const organization = await requireOrganizationMembership();
 
     const application = await createApplication(
       organization.organizationId,

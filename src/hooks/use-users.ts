@@ -2,7 +2,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
-
+import { useOrganization } from "@/components/providers/organization-provider";
 export interface User {
   _id: string;
   organizationId: string;
@@ -62,9 +62,13 @@ export async function fetchUsers(
 }
 
 export function useUsers(options: UseUsersOptions = {}) {
+  const { selectedOrganization } = useOrganization();
+  const organizationId = selectedOrganization?.id;
+
   return useQuery({
-    queryKey: queryKeys.users.list(options),
+    queryKey: queryKeys.users.list(options, organizationId),
     queryFn: () => fetchUsers(options),
+    enabled: Boolean(organizationId),
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,

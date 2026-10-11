@@ -15,10 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const organization = await requireOrganizationMembership(
-      "6ac0c5cc8e734b2c3c24d600",
-      "admin",
-    );
+    const organization = await requireOrganizationMembership("admin");
 
     const { id } = await params;
 
