@@ -1,5 +1,3 @@
-export {};
-
 import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import Application from "@/lib/db/models/Application";

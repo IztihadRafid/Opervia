@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import type {
   CreateVendorInput,
@@ -28,23 +28,19 @@ export default function VendorForm({
   onSubmit,
   onCancel,
 }: VendorFormProps) {
-  const [name, setName] = useState("");
-  const [website, setWebsite] = useState("");
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
-  const [status, setStatus] = useState<VendorStatus>("active");
-
-  useEffect(() => {
-    setName(vendor?.name ?? "");
-    setWebsite(vendor?.website ?? "");
-    setContactName(vendor?.contactName ?? "");
-    setContactEmail(vendor?.contactEmail ?? "");
-    setPhone(vendor?.phone ?? "");
-    setNotes(vendor?.notes ?? "");
-    setStatus(vendor?.status ?? "active");
-  }, [vendor]);
+  const [name, setName] = useState(() => vendor?.name ?? "");
+  const [website, setWebsite] = useState(() => vendor?.website ?? "");
+  const [contactName, setContactName] = useState(
+    () => vendor?.contactName ?? "",
+  );
+  const [contactEmail, setContactEmail] = useState(
+    () => vendor?.contactEmail ?? "",
+  );
+  const [phone, setPhone] = useState(() => vendor?.phone ?? "");
+  const [notes, setNotes] = useState(() => vendor?.notes ?? "");
+  const [status, setStatus] = useState<VendorStatus>(
+    () => vendor?.status ?? "active",
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

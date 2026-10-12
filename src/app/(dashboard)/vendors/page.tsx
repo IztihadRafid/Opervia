@@ -361,7 +361,7 @@ export default function VendorsPage() {
           <div>
             <h2 className="font-semibold tracking-tight">All vendors</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              View and manage your organization's vendors.
+              View and manage your organization`s vendors.
             </p>
           </div>
 
