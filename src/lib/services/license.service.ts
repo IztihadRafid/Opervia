@@ -1,4 +1,5 @@
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
+import { connectDB } from "@/lib/db/mongoose";
 import License, { type ILicense } from "@/lib/db/models/License";
 import Application from "@/lib/db/models/Application";
 import {
@@ -59,7 +60,7 @@ export async function getLicenses(
   organizationId: string,
   options: GetLicensesOptions = {},
 ) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectDB();
 
   const page = Math.max(1, Math.floor(options.page ?? 1));
   const limit = Math.min(100, Math.max(1, Math.floor(options.limit ?? 25)));
@@ -121,7 +122,7 @@ export async function getLicenseById(
   organizationId: string,
   licenseId: string,
 ) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectDB();
 
   if (!Types.ObjectId.isValid(licenseId)) {
     throw new Error("Invalid license ID.");
@@ -143,7 +144,7 @@ export async function createLicense(
   organizationId: string,
   input: CreateLicenseInput,
 ) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectDB();
 
   const parsed = createLicenseSchema.safeParse(input);
 
@@ -172,7 +173,7 @@ export async function updateLicense(
   licenseId: string,
   input: UpdateLicenseInput,
 ) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectDB();
 
   if (!Types.ObjectId.isValid(licenseId)) {
     throw new Error("Invalid license ID.");
@@ -249,7 +250,7 @@ export async function updateLicense(
 }
 
 export async function deleteLicense(organizationId: string, licenseId: string) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectDB();
 
   if (!Types.ObjectId.isValid(licenseId)) {
     throw new Error("Invalid license ID.");
