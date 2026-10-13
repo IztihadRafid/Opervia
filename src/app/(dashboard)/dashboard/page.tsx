@@ -6,10 +6,10 @@ import { ApplicationAnalytics } from "@/components/ui/dashboard/application-anal
 import { RenewalIntelligence } from "@/components/ui/dashboard/renewal-intelligence";
 import { useState } from "react";
 import { DashboardMetric } from "../../../../types/dashboard";
-import { EmptyState } from "@/components/ui/dashboard/empty-state";
 import { useDashboard, type DashboardRange } from "@/hooks/use-dashboard";
 import { DashboardSkeleton } from "@/components/ui/dashboard/dashboard-skeleton";
 import { DashboardError } from "@/components/ui/dashboard/dashboard-error";
+import { ActivityPreview } from "@/components/ui/activity/activity-preview";
 export default function DashboardPage() {
   const [range, setRange] = useState<DashboardRange>("12m");
 
@@ -147,26 +147,7 @@ export default function DashboardPage() {
       {data?.applications && <ApplicationAnalytics data={data.applications} />}
 
       {/* Recent Activity */}
-      <section
-        aria-labelledby="recent-activity-title"
-        className="rounded-xl border bg-card p-6"
-      >
-        <div>
-          <h2 id="recent-activity-title" className="font-semibold">
-            Recent Activity
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Latest activity across your SaaS environment
-          </p>
-        </div>
-
-        <div className="mt-6">
-          <EmptyState
-            title="No recent activity"
-            description="Activity will appear here as changes are made across your organization."
-          />
-        </div>
-      </section>
+      <ActivityPreview />
     </div>
   );
 }
