@@ -11,7 +11,7 @@ import {
   updateExpense,
 } from "@/lib/services/expense.service";
 import { updateExpenseSchema } from "@/lib/validations/expense.validation";
-
+import { createActivity } from "@/lib/services/activity.service";
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -72,8 +72,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     await connectDB();
 
     const { id } = await params;
-    const organization = await requireOrganizationMembership();
-
+    const organization = await requireOrganizationMembership("admin");
     const expense = await getExpenseById(organization.organizationId, id);
 
     if (!expense) {
@@ -122,7 +121,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       );
     }
 
-    const organization = await requireOrganizationMembership();
+    const organization = await requireOrganizationMembership("admin");
 
     const expense = await updateExpense(
       organization.organizationId,
@@ -136,7 +135,18 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 404 },
       );
     }
-
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "expense_updated",
+        title: "Expense updated",
+        description: `${expense.title} was updated.`,
+        entityId: expense.id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log expense update:", activityError);
+    }
     return NextResponse.json({
       success: true,
       message: "Expense updated successfully",
@@ -163,7 +173,19 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     await connectDB();
 
     const { id } = await params;
-    const organization = await requireOrganizationMembership();
+    const organization = await requireOrganizationMembership("admin");
+
+    const existingExpense = await getExpenseById(
+      organization.organizationId,
+      id,
+    );
+
+    if (!existingExpense) {
+      return NextResponse.json(
+        { success: false, message: "Expense not found" },
+        { status: 404 },
+      );
+    }
 
     const deleted = await deleteExpense(organization.organizationId, id);
 
@@ -174,6 +196,18 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
       );
     }
 
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "expense_deleted",
+        title: "Expense deleted",
+        description: `${existingExpense.title} was deleted from expenses.`,
+        entityId: existingExpense.id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log expense deletion:", activityError);
+    }
     return NextResponse.json({
       success: true,
       message: "Expense deleted successfully",

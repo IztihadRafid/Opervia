@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth/organization";
 import { createExpense, getExpenses } from "@/lib/services/expense.service";
 import { createExpenseSchema } from "@/lib/validations/expense.validation";
-
+import { createActivity } from "@/lib/services/activity.service";
 const getExpensesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -102,7 +102,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const organization = await requireOrganizationMembership();
+    const organization = await requireOrganizationMembership("admin");
 
     const result = await getExpenses(organization.organizationId, parsed.data);
 
@@ -153,13 +153,23 @@ export async function POST(request: Request) {
       );
     }
 
-    const organization = await requireOrganizationMembership();
-
+    const organization = await requireOrganizationMembership("admin");
     const expense = await createExpense(
       organization.organizationId,
       parsed.data,
     );
-
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "expense_created",
+        title: "Expense created",
+        description: `${expense.title} was added to expenses.`,
+        entityId: expense.id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log expense creation:", activityError);
+    }
     return NextResponse.json(
       {
         success: true,

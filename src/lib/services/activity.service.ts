@@ -12,6 +12,9 @@ export const activityTypes = [
   "user_invited",
   "invitation_revoked",
   "payment_processed",
+  "expense_created",
+  "expense_updated",
+  "expense_deleted",
 ] as const;
 
 export type ActivityType = (typeof activityTypes)[number];
@@ -30,6 +33,7 @@ export interface GetActivitiesInput {
   page: number;
   limit: number;
   type?: ActivityType;
+  userId?: string;
 }
 
 export async function createActivity(input: CreateActivityInput) {
@@ -70,6 +74,11 @@ export async function getActivities(input: GetActivitiesInput) {
   const filter = {
     organizationId,
     ...(input.type ? { type: input.type } : {}),
+    ...(input.userId
+      ? {
+          userId: new mongoose.Types.ObjectId(input.userId),
+        }
+      : {}),
   };
 
   const skip = (input.page - 1) * input.limit;

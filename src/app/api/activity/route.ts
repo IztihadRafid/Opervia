@@ -10,13 +10,11 @@ import { getActivitiesSchema } from "@/lib/validations/activity.validation";
 
 import { connectDB } from "@/lib/db/mongoose";
 
-
 export async function GET(request: Request) {
   try {
     await connectDB();
 
-    const organization =
-      await requireOrganizationMembership();
+    const organization = await requireOrganizationMembership();
 
     const url = new URL(request.url);
 
@@ -42,6 +40,9 @@ export async function GET(request: Request) {
       page: parsedQuery.data.page,
       limit: parsedQuery.data.limit,
       type: parsedQuery.data.type,
+      ...(organization.role === "owner" || organization.role === "admin"
+        ? {}
+        : { userId: organization.userId }),
     });
 
     return NextResponse.json({

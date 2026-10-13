@@ -8,6 +8,9 @@ export const activityTypes = [
   "user_invited",
   "invitation_revoked",
   "payment_processed",
+  "expense_created",
+  "expense_updated",
+  "expense_deleted",
 ] as const;
 
 export const getActivitiesSchema = z.object({
