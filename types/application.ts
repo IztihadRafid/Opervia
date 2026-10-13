@@ -2,7 +2,7 @@ export interface ApplicationListItem {
   _id: string;
   organizationId: string;
   name: string;
-  vendor: string;
+  vendorId?: string;
   category: string;
   description?: string;
   website?: string;

@@ -67,31 +67,19 @@ function serializeVendor(
 
 async function getApplicationCounts(organizationId: string) {
   const counts = await Application.aggregate<{
-    _id: string;
+    _id: Types.ObjectId;
     count: number;
   }>([
     {
       $match: {
         organizationId: new Types.ObjectId(organizationId),
-      },
-    },
-    {
-      $project: {
-        vendorKey: {
-          $toLower: {
-            $trim: {
-              input: "$vendor",
-            },
-          },
-        },
+        vendorId: { $exists: true, $ne: null },
       },
     },
     {
       $group: {
-        _id: "$vendorKey",
-        count: {
-          $sum: 1,
-        },
+        _id: "$vendorId",
+        count: { $sum: 1 },
       },
     },
   ]);
@@ -99,9 +87,7 @@ async function getApplicationCounts(organizationId: string) {
   const result = new Map<string, number>();
 
   for (const item of counts) {
-    const key = normalizeName(item._id);
-
-    result.set(key, (result.get(key) ?? 0) + item.count);
+    result.set(item._id.toString(), item.count);
   }
 
   return result;
@@ -154,7 +140,7 @@ export async function getVendors(
     vendors: items.map((vendor) =>
       serializeVendor(
         vendor,
-        applicationCounts.get(normalizeName(vendor.name)) ?? 0,
+        applicationCounts.get(vendor._id.toString()) ?? 0,
       ),
     ),
     pagination: {
@@ -176,17 +162,7 @@ export async function createVendor(
     normalizedName: normalizeName(data.name),
   });
 
-  const applicationCount = await Application.countDocuments({
-    organizationId: new Types.ObjectId(organizationId),
-    vendor: {
-      $regex: new RegExp(
-        `^\\s*${escapeRegex(data.name.trim()).replace(/\s+/g, "\\s+")}\\s*$`,
-        "i",
-      ),
-    },
-  });
-
-  return serializeVendor(vendor, applicationCount);
+  return serializeVendor(vendor, 0);
 }
 
 export async function updateVendor(
@@ -226,7 +202,7 @@ export async function updateVendor(
 
   return serializeVendor(
     vendor,
-    applicationCounts.get(normalizeName(vendor.name)) ?? 0,
+    applicationCounts.get(vendor._id.toString()) ?? 0,
   );
 }
 
@@ -241,23 +217,21 @@ export async function deleteVendor(
     return null;
   }
 
+  const organizationObjectId = new Types.ObjectId(organizationId);
+  const vendorObjectId = new Types.ObjectId(vendorId);
+
   const vendor = await Vendor.findOne({
-    _id: new Types.ObjectId(vendorId),
-    organizationId: new Types.ObjectId(organizationId),
+    _id: vendorObjectId,
+    organizationId: organizationObjectId,
   });
 
   if (!vendor) {
     return null;
   }
 
-  const matchingVendorPattern = new RegExp(
-    `^\\s*${escapeRegex(vendor.name.trim()).replace(/\s+/g, "\\s+")}\\s*$`,
-    "i",
-  );
-
   const linkedApplicationCount = await Application.countDocuments({
-    organizationId: new Types.ObjectId(organizationId),
-    vendor: matchingVendorPattern,
+    organizationId: organizationObjectId,
+    vendorId: vendorObjectId,
   });
 
   if (linkedApplicationCount > 0) {
@@ -268,8 +242,8 @@ export async function deleteVendor(
   }
 
   await Vendor.deleteOne({
-    _id: vendor._id,
-    organizationId: new Types.ObjectId(organizationId),
+    _id: vendorObjectId,
+    organizationId: organizationObjectId,
   });
 
   return {

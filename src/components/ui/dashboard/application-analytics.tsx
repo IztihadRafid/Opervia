@@ -1,5 +1,5 @@
 "use client";
-
+import { CategoryDonutChart } from "@/components/ui/dashboard/charts/category-donut-chart";
 interface ApplicationAnalyticsProps {
   data: {
     total: number;
@@ -76,12 +76,19 @@ export function ApplicationAnalytics({ data }: ApplicationAnalyticsProps) {
       </div>
 
       {/* Categories & Vendors */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-2 ">
-        <AnalyticsList
-          title="Top Categories"
-          description="Most common application categories"
-          items={data.categories}
-        />
+
+      {/* Categories & Vendors */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <div>
+          <div className="mb-4">
+            <h3 className="text-sm font-medium">Applications by Category</h3>
+            <p className="text-xs text-muted-foreground">
+              Distribution of your SaaS applications across categories
+            </p>
+          </div>
+
+          <CategoryDonutChart data={data.categories} total={data.total} />
+        </div>
 
         <AnalyticsList
           title="Top Vendors"

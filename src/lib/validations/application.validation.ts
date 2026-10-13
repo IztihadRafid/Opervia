@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createApplicationSchema = z.object({
   name: z.string().trim().min(2).max(150),
-  vendor: z.string().trim().min(2).max(150),
+  vendorId: z.string().trim().min(1, "Please select a vendor"),
   category: z.string().trim().min(2).max(100),
   description: z.string().trim().max(1000).optional(),
   website: z.url().max(500).optional(),
@@ -10,6 +10,7 @@ export const createApplicationSchema = z.object({
   owner: z.string().trim().max(150).optional(),
   usersCount: z.number().int().min(0).optional(),
 });
+
 export const getApplicationsSchema = z.object({
   page: z.coerce
     .number()
@@ -21,10 +22,11 @@ export const getApplicationsSchema = z.object({
   status: z.enum(["active", "inactive", "archived"]).optional(),
   search: z.string().trim().max(100).optional(),
 });
+
 export const updateApplicationSchema = z
   .object({
     name: z.string().trim().min(2).max(150).optional(),
-    vendor: z.string().trim().min(2).max(150).optional(),
+    vendorId: z.string().trim().min(1).optional(),
     category: z.string().trim().min(2).max(100).optional(),
     description: z.string().trim().max(1000).optional(),
     website: z.string().trim().max(500).pipe(z.url()).optional(),

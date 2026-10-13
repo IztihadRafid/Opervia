@@ -1,13 +1,16 @@
 "use client";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/query-keys";
+
 export type ApplicationStatus = "active" | "inactive" | "archived";
 
 export interface ApplicationItem {
   _id: string;
   organizationId: string;
+  vendorId?: string;
   name: string;
   vendor: string;
   category: string;
@@ -40,7 +43,7 @@ export interface ApplicationsResponse {
 
 export interface CreateApplicationInput {
   name: string;
-  vendor: string;
+  vendorId: string;
   category: string;
   description?: string;
   website?: string;

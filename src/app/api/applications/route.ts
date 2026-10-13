@@ -8,6 +8,8 @@ import {
 import {
   createApplication,
   getApplications,
+  InvalidApplicationCategoryError,
+  InvalidApplicationVendorError,
 } from "@/lib/services/application.service";
 import {
   createApplicationSchema,
@@ -24,9 +26,7 @@ export async function GET(request: Request) {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-
     const query = Object.fromEntries(searchParams.entries());
-
     const queryResult = getApplicationsSchema.safeParse(query);
 
     if (!queryResult.success) {
@@ -41,7 +41,6 @@ export async function GET(request: Request) {
     }
 
     const { page, limit, status, search } = queryResult.data;
-
     const organization = await requireOrganizationMembership();
 
     const result = await getApplications(organization.organizationId, {
@@ -61,23 +60,18 @@ export async function GET(request: Request) {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
+
     console.error("Applications API error:", error);
 
     return NextResponse.json(
@@ -95,7 +89,6 @@ export async function POST(request: Request) {
     await connectDB();
 
     const body = await request.json();
-
     const result = createApplicationSchema.safeParse(body);
 
     if (!result.success) {
@@ -115,6 +108,7 @@ export async function POST(request: Request) {
       organization.organizationId,
       result.data,
     );
+
     try {
       await createActivity({
         organizationId: organization.organizationId,
@@ -127,6 +121,7 @@ export async function POST(request: Request) {
     } catch (activityError) {
       console.error("Failed to log application creation:", activityError);
     }
+
     const response: CreateApplicationResponse = {
       success: true,
       application,
@@ -134,27 +129,38 @@ export async function POST(request: Request) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error("Create application API error:", error);
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
 
+    if (error instanceof InvalidApplicationVendorError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 400 },
+      );
+    }
+    if (error instanceof InvalidApplicationCategoryError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 400 },
+      );
+    }
     if (error instanceof Error && error.name === "ValidationError") {
       return NextResponse.json(
         {
@@ -165,6 +171,8 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    console.error("Create application API error:", error);
 
     return NextResponse.json(
       {

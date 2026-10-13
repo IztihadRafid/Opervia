@@ -2,6 +2,7 @@ import mongoose, { Schema, type Document, type Model } from "mongoose";
 
 export interface IApplication extends Document {
   organizationId: mongoose.Types.ObjectId;
+  vendorId?: mongoose.Types.ObjectId;
   name: string;
   vendor: string;
   category: string;
@@ -22,7 +23,11 @@ const applicationSchema = new Schema<IApplication>(
       required: true,
       index: true,
     },
-
+    vendorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vendor",
+      required: false, // Temporary during migration
+    },
     name: {
       type: String,
       required: true,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { SubmitEvent, useState } from "react";
 import {
   useApplications,
   useCreateApplication,
@@ -11,12 +11,13 @@ import {
   type ApplicationStatus,
   type CreateApplicationInput,
 } from "@/hooks/useApplications";
-
+import { useVendors } from "@/hooks/useVendors";
+import { useCategories } from "@/hooks/useCategories";
 const PAGE_SIZE = 10;
 
 const emptyForm = {
   name: "",
-  vendor: "",
+  vendorId: "",
   category: "",
   description: "",
   website: "",
@@ -48,7 +49,7 @@ export default function ApplicationsPage() {
 
   const [successMessage, setSuccessMessage] = useState("");
   const [name, setName] = useState(emptyForm.name);
-  const [vendor, setVendor] = useState(emptyForm.vendor);
+  const [vendorId, setVendorId] = useState(emptyForm.vendorId);
   const [category, setCategory] = useState(emptyForm.category);
   const [description, setDescription] = useState(emptyForm.description);
   const [website, setWebsite] = useState(emptyForm.website);
@@ -57,7 +58,32 @@ export default function ApplicationsPage() {
   const [formStatus, setFormStatus] = useState<ApplicationStatus>(
     emptyForm.status,
   );
+  const vendorsQuery = useVendors({
+    page: 1,
+    limit: 100,
+    status: "active",
+  });
 
+  const vendors = vendorsQuery.data?.vendors ?? [];
+
+  const categoriesQuery = useCategories({
+    page: 1,
+    limit: 100,
+  });
+
+  const categories = categoriesQuery.data?.categories ?? [];
+
+  const activeCategories = categories.filter(
+    (item) => item.status === "active",
+  );
+
+  const selectedCategoryExists = categories.some(
+    (item) => item.name === category,
+  );
+
+  const selectedCategoryIsActive = activeCategories.some(
+    (item) => item.name === category,
+  );
   function updateFilters(updates: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -93,7 +119,7 @@ export default function ApplicationsPage() {
 
   function resetForm() {
     setName(emptyForm.name);
-    setVendor(emptyForm.vendor);
+    setVendorId(emptyForm.vendorId);
     setCategory(emptyForm.category);
     setDescription(emptyForm.description);
     setWebsite(emptyForm.website);
@@ -111,7 +137,7 @@ export default function ApplicationsPage() {
   function startEditing(application: ApplicationItem) {
     setEditingApplication(application);
     setName(application.name);
-    setVendor(application.vendor);
+    setVendorId(application.vendorId ?? "");
     setCategory(application.category);
     setDescription(application.description ?? "");
     setWebsite(application.website ?? "");
@@ -129,15 +155,13 @@ export default function ApplicationsPage() {
     setSuccessMessage("");
   }
 
-  async function handleSubmitApplication(
-    event: React.FormEvent<HTMLFormElement>,
-  ) {
+  async function handleSubmitApplication(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setSuccessMessage("");
 
     const input: CreateApplicationInput = {
       name: name.trim(),
-      vendor: vendor.trim(),
+      vendorId,
       category: category.trim(),
       ...(description.trim() ? { description: description.trim() } : {}),
       ...(website.trim() ? { website: website.trim() } : {}),
@@ -259,28 +283,106 @@ export default function ApplicationsPage() {
 
             <label className="space-y-1.5 text-sm font-medium">
               Vendor *
-              <input
+              <select
                 required
-                minLength={2}
-                maxLength={150}
-                value={vendor}
-                onChange={(event) => setVendor(event.target.value)}
+                value={vendorId}
+                onChange={(event) => setVendorId(event.target.value)}
+                disabled={vendorsQuery.isPending || vendorsQuery.isError}
                 className={inputClass}
-                placeholder="e.g. Salesforce"
-              />
+              >
+                <option value="">
+                  {vendorsQuery.isPending
+                    ? "Loading vendors..."
+                    : vendorsQuery.isError
+                      ? "Unable to load vendors"
+                      : vendors.length === 0
+                        ? "No active vendors available"
+                        : "Select a vendor"}
+                </option>
+
+                {vendors.map((vendor) => (
+                  <option key={vendor._id} value={vendor._id}>
+                    {vendor.name}
+                  </option>
+                ))}
+              </select>
+              {!vendorsQuery.isPending &&
+                !vendorsQuery.isError &&
+                vendors.length === 0 && (
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Create a vendor in the Vendors section before adding an
+                    application.
+                  </span>
+                )}
+              {vendorsQuery.isError && (
+                <span
+                  role="alert"
+                  className="block text-xs font-normal text-destructive"
+                >
+                  Failed to load vendors. Please refresh and try again.
+                </span>
+              )}
             </label>
 
             <label className="space-y-1.5 text-sm font-medium">
               Category *
-              <input
+              <select
                 required
-                minLength={2}
-                maxLength={100}
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
+                disabled={categoriesQuery.isPending || categoriesQuery.isError}
                 className={inputClass}
-                placeholder="e.g. Communication"
-              />
+              >
+                <option value="">
+                  {categoriesQuery.isPending
+                    ? "Loading categories..."
+                    : categoriesQuery.isError
+                      ? "Unable to load categories"
+                      : activeCategories.length === 0
+                        ? "No active categories available"
+                        : "Select a category"}
+                </option>
+
+                {activeCategories.map((item) => (
+                  <option key={item.id} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+
+                {editingApplication &&
+                  category &&
+                  !selectedCategoryIsActive && (
+                    <option value={category}>
+                      {category}
+                      {selectedCategoryExists
+                        ? " (inactive)"
+                        : " (current category)"}
+                    </option>
+                  )}
+              </select>
+              {!categoriesQuery.isPending &&
+                !categoriesQuery.isError &&
+                activeCategories.length === 0 && (
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Create or activate a category in Settings before adding an
+                    application.
+                  </span>
+                )}
+              {categoriesQuery.isError && (
+                <span
+                  role="alert"
+                  className="block text-xs font-normal text-destructive"
+                >
+                  Failed to load categories.{" "}
+                  <button
+                    type="button"
+                    onClick={() => void categoriesQuery.refetch()}
+                    className="underline underline-offset-2"
+                  >
+                    Retry
+                  </button>
+                </span>
+              )}
             </label>
 
             <label className="space-y-1.5 text-sm font-medium">

@@ -6,6 +6,7 @@ import {
 } from "@/lib/services/subscription.service";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
+import Vendor from "@/lib/db/models/Vendor";
 export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
 
 export interface DashboardSpendingPoint {
@@ -612,11 +613,15 @@ async function getApplicationAnalytics(
             $limit: 10,
           },
         ],
-
         vendors: [
           {
+            $match: {
+              vendorId: { $type: "objectId" },
+            },
+          },
+          {
             $group: {
-              _id: "$vendor",
+              _id: "$vendorId",
               count: {
                 $sum: 1,
               },
@@ -632,7 +637,6 @@ async function getApplicationAnalytics(
             $limit: 10,
           },
         ],
-
         userCountDistribution: [
           {
             $group: {
@@ -735,11 +739,30 @@ async function getApplicationAnalytics(
     }),
   );
 
-  const vendors = (analytics?.vendors ?? []).map(
-    (item: { _id: string; count: number }) => ({
-      name: item._id,
-      count: item.count,
-    }),
+  const vendorAnalytics = analytics?.vendors ?? [];
+  const vendorIds = vendorAnalytics.map(
+    (item: { _id: mongoose.Types.ObjectId; count: number }) => item._id,
+  );
+
+  const vendorDocuments = vendorIds.length
+    ? await Vendor.find({
+        organizationId: organizationObjectId,
+        _id: { $in: vendorIds },
+      })
+        .select("_id name")
+        .lean()
+    : [];
+
+  const vendorNames = new Map(
+    vendorDocuments.map((vendor) => [vendor._id.toString(), vendor.name]),
+  );
+
+  const vendors = vendorAnalytics.flatMap(
+    (item: { _id: mongoose.Types.ObjectId; count: number }) => {
+      const name = vendorNames.get(item._id.toString());
+
+      return name ? [{ name, count: item.count }] : [];
+    },
   );
 
   const userCountDistribution = {

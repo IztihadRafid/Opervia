@@ -10,6 +10,8 @@ import { updateApplicationSchema } from "@/lib/validations/application.validatio
 import {
   updateApplication,
   deleteApplication,
+  InvalidApplicationCategoryError,
+  InvalidApplicationVendorError,
 } from "@/lib/services/application.service";
 import { CreateApplicationResponse } from "../../../../../types/api";
 import { connectDB } from "@/lib/db/mongoose";
@@ -35,7 +37,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     const body = await request.json();
-
     const result = updateApplicationSchema.safeParse(body);
 
     if (!result.success) {
@@ -48,7 +49,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
+
     const organization = await requireOrganizationMembership();
+
     const application = await updateApplication(
       organization.organizationId,
       id,
@@ -64,6 +67,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
         { status: 404 },
       );
     }
+
     try {
       await createActivity({
         organizationId: organization.organizationId,
@@ -76,6 +80,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     } catch (activityError) {
       console.error("Failed to log application update:", activityError);
     }
+
     const response: CreateApplicationResponse = {
       success: true,
       application,
@@ -85,24 +90,36 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
 
+    if (error instanceof InvalidApplicationVendorError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 400 },
+      );
+    }
+    if (error instanceof InvalidApplicationCategoryError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 400 },
+      );
+    }
     console.error("Update application API error:", error);
 
     return NextResponse.json(
@@ -114,6 +131,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     );
   }
 }
+
 export async function DELETE(request: Request, { params }: RouteContext) {
   try {
     await connectDB();
@@ -129,7 +147,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         { status: 400 },
       );
     }
+
     const organization = await requireOrganizationMembership();
+
     const application = await deleteApplication(
       organization.organizationId,
       id,
@@ -166,20 +186,14 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
