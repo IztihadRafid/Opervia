@@ -212,8 +212,22 @@ export async function getRenewalIntelligence(
           {
             $lookup: {
               from: "applications",
-              localField: "applicationId",
-              foreignField: "_id",
+              let: {
+                applicationId: "$applicationId",
+                organizationId: "$organizationId",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ["$_id", "$$applicationId"] },
+                        { $eq: ["$organizationId", "$$organizationId"] },
+                      ],
+                    },
+                  },
+                },
+              ],
               as: "application",
             },
           },

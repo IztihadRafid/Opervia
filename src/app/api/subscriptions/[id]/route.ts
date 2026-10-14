@@ -90,11 +90,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 
     const nextStartDate = input.startDate ?? existing.startDate;
-    const nextEndDate = Object.prototype.hasOwnProperty.call(input, "endDate")
-      ? input.endDate
-      : existing.endDate;
+    const hasEndDateUpdate = Object.prototype.hasOwnProperty.call(
+      input,
+      "endDate",
+    );
+    const nextEndDate = hasEndDateUpdate ? input.endDate : existing.endDate;
 
-    if (nextEndDate && nextEndDate < nextStartDate) {
+    if (nextEndDate != null && nextEndDate < nextStartDate) {
       return NextResponse.json(
         {
           success: false,

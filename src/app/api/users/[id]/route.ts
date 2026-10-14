@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-
 import mongoose from "mongoose";
 
 import {
@@ -9,7 +8,6 @@ import {
 } from "@/lib/auth/organization";
 
 import { connectDB } from "@/lib/db/mongoose";
-
 import { updateUserSchema } from "@/lib/validations/user.validation";
 
 import {
@@ -18,10 +16,11 @@ import {
   updateUser,
 } from "@/lib/services/user.service";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
+
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const organization = await requireOrganizationMembership("admin");
 
@@ -31,16 +30,12 @@ export async function PATCH(
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid user ID",
-        },
+        { success: false, message: "Invalid user ID" },
         { status: 400 },
       );
     }
 
     const body = await request.json();
-
     const parsed = updateUserSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -86,14 +81,22 @@ export async function PATCH(
       );
     }
 
+    if (parsed.data.role === "owner" && targetUser.role !== "owner") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Cannot assign the owner role; ownership transfer is not supported",
+        },
+        { status: 409 },
+      );
+    }
+
     const user = await updateUser(organization.organizationId, id, parsed.data);
 
     if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "User not found",
-        },
+        { success: false, message: "User not found" },
         { status: 404 },
       );
     }
@@ -105,53 +108,49 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
 
-    if (
-      error instanceof Error &&
-      error.message === "A user with this email already exists"
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
-        { status: 409 },
-      );
+    if (error instanceof Error) {
+      if (error.message === "A user with this email already exists") {
+        return NextResponse.json(
+          { success: false, message: error.message },
+          { status: 409 },
+        );
+      }
+
+      if (
+        error.message ===
+          "Cannot demote or suspend the last owner of an organization" ||
+        error.message ===
+          "Cannot assign the owner role; ownership transfer is not supported"
+      ) {
+        return NextResponse.json(
+          { success: false, message: error.message },
+          { status: 409 },
+        );
+      }
     }
 
     console.error("User PATCH error:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to update user",
-      },
+      { success: false, message: "Failed to update user" },
       { status: 500 },
     );
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   try {
     const organization = await requireOrganizationMembership("admin");
 
@@ -161,10 +160,7 @@ export async function DELETE(
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid user ID",
-        },
+        { success: false, message: "Invalid user ID" },
         { status: 400 },
       );
     }
@@ -188,14 +184,11 @@ export async function DELETE(
       );
     }
 
-    const user = await deleteUser(organization.organizationId, id);
+    const deletedUser = await deleteUser(organization.organizationId, id);
 
-    if (!user) {
+    if (!deletedUser) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "User not found",
-        },
+        { success: false, message: "User not found" },
         { status: 404 },
       );
     }
@@ -207,20 +200,14 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof UnauthorizedError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 401 },
       );
     }
 
     if (error instanceof ForbiddenError) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 403 },
       );
     }
@@ -230,10 +217,7 @@ export async function DELETE(
       error.message === "Cannot delete the last owner of an organization"
     ) {
       return NextResponse.json(
-        {
-          success: false,
-          message: error.message,
-        },
+        { success: false, message: error.message },
         { status: 409 },
       );
     }
@@ -241,10 +225,7 @@ export async function DELETE(
     console.error("User DELETE error:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to delete user",
-      },
+      { success: false, message: "Failed to delete user" },
       { status: 500 },
     );
   }

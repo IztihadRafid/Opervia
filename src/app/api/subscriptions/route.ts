@@ -1,28 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Types } from "mongoose";
 import Application from "@/lib/db/models/Application";
 import Subscription from "@/lib/db/models/Subscription";
-import Membership from "@/lib/db/models/Membership";
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  requireOrganizationMembership,
+} from "@/lib/auth/organization";
 import {
   createSubscriptionSchema,
   getSubscriptionsSchema,
 } from "@/lib/validations/subscription.validation";
 import { createActivity } from "@/lib/services/activity.service";
 import { connectDB } from "@/lib/db/mongoose";
-import { auth } from "@/auth";
+
+function handleAuthError(error: unknown) {
+  if (error instanceof UnauthorizedError) {
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 401 },
+    );
+  }
+
+  if (error instanceof ForbiddenError) {
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 403 },
+    );
+  }
+
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
     await connectDB();
+
+    const organization = await requireOrganizationMembership();
 
     const { searchParams } = new URL(request.url);
     const parsed = getSubscriptionsSchema.safeParse({
@@ -44,44 +57,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const membership = await Membership.findOne({
-      userId: new Types.ObjectId(session.user.id),
-    }).lean();
-
-    if (!membership) {
-      return NextResponse.json(
-        { success: false, message: "Organization membership not found" },
-        { status: 403 },
-      );
-    }
-
     const { page, limit, status, billingCycle, search } = parsed.data;
-    const filter: Record<string, unknown> = {
-      organizationId: membership.organizationId,
-    };
+    const organizationId = organization.organizationId;
+
+    const filter: Record<string, unknown> = { organizationId };
 
     if (status) filter.status = status;
     if (billingCycle) filter.billingCycle = billingCycle;
 
     if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
       const matchingApplications = await Application.find({
-        organizationId: membership.organizationId,
-        name: {
-          $regex: search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-          $options: "i",
-        },
+        organizationId,
+        name: { $regex: escapedSearch, $options: "i" },
       })
         .select("_id")
         .lean();
 
       filter.$or = [
+        { plan: { $regex: escapedSearch, $options: "i" } },
         {
-          plan: {
-            $regex: search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-            $options: "i",
+          applicationId: {
+            $in: matchingApplications.map((app) => app._id),
           },
         },
-        { applicationId: { $in: matchingApplications.map((app) => app._id) } },
       ];
     }
 
@@ -97,9 +97,10 @@ export async function GET(request: NextRequest) {
     const appIds = [
       ...new Set(items.map((item) => String(item.applicationId))),
     ];
+
     const apps = await Application.find({
       _id: { $in: appIds },
-      organizationId: membership.organizationId,
+      organizationId,
     })
       .select("_id name")
       .lean();
@@ -131,7 +132,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
+
     console.error("GET /api/subscriptions error:", error);
+
     return NextResponse.json(
       { success: false, message: "Failed to fetch subscriptions" },
       { status: 500 },
@@ -141,16 +146,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
-    }
-
     await connectDB();
+
+    const organization = await requireOrganizationMembership();
 
     const body = await request.json().catch(() => null);
     const parsed = createSubscriptionSchema.safeParse(body);
@@ -166,20 +164,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const membership = await Membership.findOne({
-      userId: new Types.ObjectId(session.user.id),
-    }).lean();
-
-    if (!membership) {
-      return NextResponse.json(
-        { success: false, message: "Organization membership not found" },
-        { status: 403 },
-      );
-    }
+    const organizationId = organization.organizationId;
 
     const application = await Application.findOne({
       _id: parsed.data.applicationId,
-      organizationId: membership.organizationId,
+      organizationId,
     })
       .select("_id")
       .lean();
@@ -196,13 +185,13 @@ export async function POST(request: NextRequest) {
 
     const subscription = await Subscription.create({
       ...parsed.data,
-      organizationId: membership.organizationId,
+      organizationId,
     });
 
     try {
       await createActivity({
-        organizationId: String(membership.organizationId),
-        userId: session.user.id,
+        organizationId,
+        userId: organization.userId,
         type: "subscription_added",
         title: "Subscription added",
         description: `Added subscription: ${parsed.data.plan}`,
@@ -225,7 +214,11 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
+
     console.error("POST /api/subscriptions error:", error);
+
     return NextResponse.json(
       { success: false, message: "Failed to create subscription" },
       { status: 500 },
