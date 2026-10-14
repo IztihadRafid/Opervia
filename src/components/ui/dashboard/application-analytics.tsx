@@ -76,8 +76,6 @@ export function ApplicationAnalytics({ data }: ApplicationAnalyticsProps) {
       </div>
 
       {/* Categories & Vendors */}
-
-      {/* Categories & Vendors */}
       <div className="mt-8 grid gap-8 lg:grid-cols-2">
         <div>
           <div className="mb-4">
@@ -114,13 +112,13 @@ export function ApplicationAnalytics({ data }: ApplicationAnalyticsProps) {
           />
 
           <AnalyticsRow
-            label="1 – 10 users"
+            label="1 - 10 users"
             value={data.userCountDistribution.low}
             total={totalUserDistribution}
           />
 
           <AnalyticsRow
-            label="11 – 100 users"
+            label="11 - 100 users"
             value={data.userCountDistribution.medium}
             total={totalUserDistribution}
           />

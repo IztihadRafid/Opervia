@@ -5,7 +5,10 @@ import { auth } from "@/auth";
 import { connectDB } from "@/lib/db/mongoose";
 import Organization from "@/lib/db/models/Organization";
 import Membership from "@/lib/db/models/Membership";
-import { getMembershipsForUser } from "@/lib/services/membership.service";
+import {
+  getMembership,
+  getMembershipsForUser,
+} from "@/lib/services/membership.service";
 
 const createOrganizationSchema = z.object({
   name: z
@@ -78,7 +81,40 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
+  const organizationId = request.headers.get("x-organization-id");
 
+  if (!organizationId) {
+    return NextResponse.json(
+      { message: "Select an organization first." },
+      { status: 400 },
+    );
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(session.user.id)) {
+    return NextResponse.json(
+      { message: "Invalid user session" },
+      { status: 401 },
+    );
+  }
+
+  const membership = await getMembership(session.user.id, organizationId);
+
+  if (!membership) {
+    return NextResponse.json(
+      { message: "Active organization membership required." },
+      { status: 403 },
+    );
+  }
+
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    return NextResponse.json(
+      {
+        message:
+          "Only organization owners and admins can create organizations.",
+      },
+      { status: 403 },
+    );
+  }
   const parsed = createOrganizationSchema.safeParse(
     await request.json().catch(() => null),
   );
@@ -89,13 +125,6 @@ export async function POST(request: Request) {
         message: parsed.error.issues[0]?.message ?? "Invalid organization name",
       },
       { status: 400 },
-    );
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(session.user.id)) {
-    return NextResponse.json(
-      { message: "Invalid user session" },
-      { status: 401 },
     );
   }
 

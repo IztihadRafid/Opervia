@@ -1,11 +1,11 @@
 "use client";
-import { Bell, Search, ChevronsUpDown, Building2 } from "lucide-react";
+import { Bell, Search, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { UserNav } from "./user-nav";
-
+import { CreateOrganizationDialog } from "./create-organization-dialog";
 export function AppHeader() {
   const {
     organizations,
@@ -63,11 +63,10 @@ export function AppHeader() {
               </p>
             )}
           </div>
-
-          <ChevronsUpDown className="hidden size-3.5 shrink-0 text-muted-foreground sm:block" />
         </div>
       </div>
-
+      {(selectedOrganization?.role === "owner" ||
+        selectedOrganization?.role === "admin") && <CreateOrganizationDialog />}
       <div className="flex shrink-0 items-center gap-1">
         <Button variant="ghost" size="icon" className="size-9">
           <Search className="size-4" />

@@ -8,7 +8,7 @@ import {
 import { createLicense, getLicenses } from "@/lib/services/license.service";
 import { createLicenseSchema } from "@/lib/validations/license.validation";
 import { z } from "zod";
-
+import { createActivity } from "@/lib/services/activity.service";
 const getLicensesSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -96,6 +96,19 @@ export async function POST(request: Request) {
       organization.organizationId,
       parsed.data,
     );
+
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "license_created",
+        title: "License created",
+        description: `${license.name} was added to your licenses.`,
+        entityId: license.id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log license creation:", activityError);
+    }
 
     return NextResponse.json(
       {

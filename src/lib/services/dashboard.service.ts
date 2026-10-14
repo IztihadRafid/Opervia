@@ -4,6 +4,7 @@ import {
   getMonthlySpend,
   getRenewalIntelligence,
 } from "@/lib/services/subscription.service";
+import Membership from "@/lib/db/models/Membership";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 import Vendor from "@/lib/db/models/Vendor";
@@ -797,10 +798,30 @@ export async function getDashboardData(
     renewalIntelligence,
   ] = await Promise.all([
     getMonthlySpend(organizationId),
-    User.countDocuments({
-      organizationId,
-      status: "active",
-    }),
+    Membership.aggregate<{ count: number }>([
+      {
+        $match: {
+          organizationId: new mongoose.Types.ObjectId(organizationId),
+          status: "active",
+        },
+      },
+      {
+        $lookup: {
+          from: User.collection.name,
+          localField: "userId",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $match: {
+          "user.0": { $exists: true },
+        },
+      },
+      {
+        $count: "count",
+      },
+    ]).then((result) => result[0]?.count ?? 0),
     getSpendingAnalytics(organizationId, range),
     getSubscriptionAnalytics(organizationId),
     getApplicationAnalytics(organizationId),

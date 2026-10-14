@@ -11,7 +11,7 @@ import {
   updateLicense,
 } from "@/lib/services/license.service";
 import { updateLicenseSchema } from "@/lib/validations/license.validation";
-
+import { createActivity } from "@/lib/services/activity.service";
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -100,6 +100,19 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       );
     }
 
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "license_updated",
+        title: "License updated",
+        description: `${license.name} was updated.`,
+        entityId: license.id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log license update:", activityError);
+    }
+
     return NextResponse.json({
       success: true,
       message: "License updated successfully",
@@ -170,6 +183,19 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
         { success: false, message: "License not found" },
         { status: 404 },
       );
+    }
+
+    try {
+      await createActivity({
+        organizationId: organization.organizationId,
+        userId: organization.userId,
+        type: "license_deleted",
+        title: "License deleted",
+        description: "A license was deleted.",
+        entityId: id,
+      });
+    } catch (activityError) {
+      console.error("Failed to log license deletion:", activityError);
     }
 
     return NextResponse.json({

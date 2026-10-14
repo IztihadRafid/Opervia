@@ -104,6 +104,23 @@ const activityMeta: Record<
     icon: Trash2,
     color: "bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:text-rose-400",
   },
+
+  license_created: {
+    label: "License created",
+    icon: FilePlus2,
+    color:
+      "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20 dark:text-emerald-400",
+  },
+  license_updated: {
+    label: "License updated",
+    icon: RefreshCw,
+    color: "bg-blue-500/10 text-blue-600 ring-blue-500/20 dark:text-blue-400",
+  },
+  license_deleted: {
+    label: "License deleted",
+    icon: Trash2,
+    color: "bg-rose-500/10 text-rose-600 ring-rose-500/20 dark:text-rose-400",
+  },
 };
 
 const filterOptions: { value: ActivityType | "all"; label: string }[] = [

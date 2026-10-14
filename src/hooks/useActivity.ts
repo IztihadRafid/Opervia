@@ -18,6 +18,9 @@ export const activityTypes = [
   "expense_created",
   "expense_updated",
   "expense_deleted",
+  "license_created",
+  "license_updated",
+  "license_deleted",
 ] as const;
 
 export type ActivityType = (typeof activityTypes)[number];
@@ -32,6 +35,9 @@ export const filterableActivityTypes = [
   "expense_created",
   "expense_updated",
   "expense_deleted",
+  "license_created",
+  "license_updated",
+  "license_deleted",
 ] as const;
 export interface ActivityItem {
   _id: string;
