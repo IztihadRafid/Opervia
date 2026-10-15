@@ -6,9 +6,10 @@ import { sendInvitationEmail } from "@/lib/email/sendInvitationEmail";
 import {
   generateInvitationToken,
   hashInvitationToken,
+  encryptInvitationToken,
+  decryptInvitationToken,
 } from "@/lib/auth/invitation";
 import { connectDB } from "@/lib/db/mongoose";
-import { EmailDeliveryError } from "@/lib/email/email-error";
 
 const INVITATION_EXPIRATION_DAYS = 7;
 const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -54,6 +55,7 @@ export async function createInvitation({
   }
 
   const { token, tokenHash } = generateInvitationToken();
+  const encryptedToken = encryptInvitationToken(token);
 
   const expiresAt = new Date(
     Date.now() + INVITATION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000,
@@ -64,6 +66,7 @@ export async function createInvitation({
     email: normalizedEmail,
     role,
     tokenHash,
+    encryptedToken,
     expiresAt,
     acceptedAt: null,
     revokedAt: null,
@@ -72,7 +75,8 @@ export async function createInvitation({
     emailSentAt: null,
     emailError: null,
   });
-
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const invitationUrl = `${baseUrl}/invite/${token}`;
   try {
     const [organization, inviter] = await Promise.all([
       Organization.findById(organizationId).select("name").lean(),
@@ -86,10 +90,6 @@ export async function createInvitation({
     if (!inviter) {
       throw new Error("Inviter not found");
     }
-
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-
-    const invitationUrl = `${baseUrl}/invite/${token}`;
 
     await sendInvitationEmail({
       to: normalizedEmail,
@@ -132,11 +132,6 @@ export async function createInvitation({
         },
       },
     );
-
-    throw new EmailDeliveryError(emailError, {
-      invitationId: invitation._id.toString(),
-      email: invitation.email,
-    });
   }
 
   const updatedInvitation = await Invitation.findOne({
@@ -151,6 +146,7 @@ export async function createInvitation({
   return {
     invitation: updatedInvitation,
     token,
+    invitationUrl,
   };
 }
 
@@ -201,6 +197,7 @@ export async function resendInvitation({
   }
 
   const { token, tokenHash } = generateInvitationToken();
+  const encryptedToken = encryptInvitationToken(token);
 
   const expiresAt = new Date(
     now.getTime() + INVITATION_EXPIRATION_DAYS * 24 * 60 * 60 * 1000,
@@ -217,6 +214,7 @@ export async function resendInvitation({
     {
       $set: {
         tokenHash,
+        encryptedToken,
         expiresAt,
         lastResentAt: now,
         emailStatus: "pending",
@@ -236,6 +234,9 @@ export async function resendInvitation({
     throw new Error("Invitation changed. Please try again");
   }
 
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  const invitationUrl = `${baseUrl}/invite/${token}`;
+
   try {
     const [organization, inviter] = await Promise.all([
       Organization.findById(organizationId).select("name").lean(),
@@ -249,9 +250,6 @@ export async function resendInvitation({
     if (!inviter) {
       throw new Error("Inviter not found");
     }
-
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const invitationUrl = `${baseUrl}/invite/${token}`;
 
     await sendInvitationEmail({
       to: reservedInvitation.email,
@@ -300,8 +298,6 @@ export async function resendInvitation({
         },
       },
     );
-
-    throw new EmailDeliveryError(emailError);
   }
 
   const updatedInvitation = await Invitation.findOne({
@@ -317,6 +313,7 @@ export async function resendInvitation({
   return {
     invitation: updatedInvitation,
     token,
+    invitationUrl,
   };
 }
 
@@ -369,7 +366,9 @@ export async function getInvitations({
 
   const [invitations, total] = await Promise.all([
     Invitation.find(filter)
-      .select("email role expiresAt invitedBy createdAt revokedAt emailStatus")
+      .select(
+        "email role expiresAt invitedBy createdAt revokedAt emailStatus +encryptedToken",
+      )
       .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(safeLimit)
@@ -379,21 +378,42 @@ export async function getInvitations({
   ]);
 
   const now = new Date();
+  const baseUrl = (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(
+    /\/+$/,
+    "",
+  );
 
-  const data = invitations.map((invitation) => ({
-    _id: invitation._id.toString(),
-    email: invitation.email,
-    role: invitation.role,
-    expiresAt: invitation.expiresAt,
-    invitedBy: invitation.invitedBy.toString(),
-    createdAt: invitation.createdAt,
-    emailStatus: invitation.emailStatus,
-    status: invitation.revokedAt
+  const data = invitations.map((invitation) => {
+    const status = invitation.revokedAt
       ? ("revoked" as const)
       : invitation.expiresAt > now
         ? ("pending" as const)
-        : ("expired" as const),
-  }));
+        : ("expired" as const);
+
+    let invitationUrl: string | null = null;
+
+    if (status === "pending" && invitation.encryptedToken) {
+      try {
+        const token = decryptInvitationToken(invitation.encryptedToken);
+        invitationUrl = `${baseUrl}/invite/${token}`;
+      } catch {
+        // Keep the invitation visible if its saved link cannot be decrypted.
+        invitationUrl = null;
+      }
+    }
+
+    return {
+      _id: invitation._id.toString(),
+      email: invitation.email,
+      role: invitation.role,
+      expiresAt: invitation.expiresAt,
+      invitedBy: invitation.invitedBy.toString(),
+      createdAt: invitation.createdAt,
+      emailStatus: invitation.emailStatus,
+      status,
+      invitationUrl,
+    };
+  });
 
   return {
     data,

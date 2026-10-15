@@ -9,6 +9,7 @@ type ResendInvitationResponse = {
     email: string;
     role: "admin" | "member" | "viewer";
     expiresAt: string;
+    emailStatus: "pending" | "sent" | "failed";
     invitationUrl: string;
   };
 };

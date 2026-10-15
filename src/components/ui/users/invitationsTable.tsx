@@ -1,10 +1,7 @@
 "use client";
-
 import { useState } from "react";
-
 import type { Invitation } from "@/hooks/useInvitations";
 import { useResendInvitation } from "@/hooks/useResendInvitation";
-
 import { RevokeInvitationDialog } from "./revokeInvitationDialog";
 
 type InvitationsTableProps = {
@@ -47,6 +44,10 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
     message: string;
   } | null>(null);
 
+  const [invitationLinks, setInvitationLinks] = useState<
+    Record<string, string>
+  >({});
+
   const resendInvitation = useResendInvitation();
 
   const handleResend = (invitationId: string) => {
@@ -54,9 +55,27 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
     setResendingInvitationId(invitationId);
 
     resendInvitation.mutate(invitationId, {
-      onSuccess: () => {
+      onSuccess: (response) => {
         setResendingInvitationId(null);
         setRecentlyResentInvitationId(invitationId);
+
+        const invitationUrl = response.data?.invitationUrl;
+
+        if (invitationUrl) {
+          setInvitationLinks((current) => ({
+            ...current,
+            [invitationId]: invitationUrl,
+          }));
+        }
+
+        setFeedback({
+          type: response.data?.emailStatus === "failed" ? "error" : "success",
+          message:
+            response.message ??
+            (response.data?.emailStatus === "failed"
+              ? "Invitation link generated, but email delivery failed."
+              : "Invitation link generated successfully."),
+        });
 
         window.setTimeout(() => {
           setRecentlyResentInvitationId((current) =>
@@ -124,6 +143,10 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
                   </th>
 
                   <th className="px-5 py-3.5 font-medium text-muted-foreground">
+                    Invitation Link
+                  </th>
+
+                  <th className="px-5 py-3.5 font-medium text-muted-foreground">
                     Actions
                   </th>
                 </tr>
@@ -174,6 +197,45 @@ export function InvitationsTable({ invitations }: InvitationsTableProps) {
 
                       <td className="px-5 py-4 text-muted-foreground">
                         {formatDate(invitation?.createdAt)}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        {(invitationLinks[invitation._id] ??
+                        invitation.invitationUrl) ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(
+                                  invitationLinks[invitation._id] ??
+                                    invitation.invitationUrl!,
+                                );
+                                setFeedback({
+                                  type: "success",
+                                  message: `Invitation link copied for ${invitation.email}.`,
+                                });
+                              } catch {
+                                setFeedback({
+                                  type: "error",
+                                  message:
+                                    "Could not copy the link. Please try again.",
+                                });
+                              }
+                            }}
+                            className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition hover:bg-primary/10"
+                          >
+                            Copy link
+                          </button>
+                        ) : invitation.status === "pending" ||
+                          invitation.status === "expired" ? (
+                          <span className="text-xs text-muted-foreground">
+                            Use Resend to generate link
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-5 py-4">

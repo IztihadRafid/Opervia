@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { invitation, token } = await createInvitation({
+    const { invitation, invitationUrl } = await createInvitation({
       organizationId: organization.organizationId,
       email: parsed.data.email,
       role: parsed.data.role,
@@ -83,15 +83,15 @@ export async function POST(request: NextRequest) {
     } catch (activityError) {
       console.error("Failed to log invitation creation:", activityError);
     }
-
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-
-    const invitationUrl = `${baseUrl}/invite/${token}`;
-
     return NextResponse.json(
       {
         success: true,
-        message: "Invitation sent successfully",
+
+        message:
+          invitation.emailStatus === "sent"
+            ? "Invitation created and email sent successfully."
+            : "Invitation created, but the email could not be delivered. Share the invitation link directly.",
+
         data: {
           id: invitation._id,
           email: invitation.email,

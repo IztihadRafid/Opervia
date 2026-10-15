@@ -33,6 +33,7 @@ export type Invitation = {
   createdAt: string;
   emailStatus: "pending" | "sent" | "failed";
   status: "pending" | "expired" | "revoked";
+  invitationUrl: string | null;
 };
 type InvitationsResponse = {
   success: boolean;

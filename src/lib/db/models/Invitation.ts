@@ -5,6 +5,7 @@ export interface IInvitation extends Document {
   email: string;
   role: "admin" | "member" | "viewer";
   tokenHash: string;
+  encryptedToken?: string;
   expiresAt: Date;
   acceptedAt?: Date | null;
   revokedAt?: Date | null;
@@ -48,7 +49,11 @@ const invitationSchema = new Schema<IInvitation>(
       unique: true,
       select: false,
     },
-
+    encryptedToken: {
+      type: String,
+      required: false,
+      select: false,
+    },
     expiresAt: {
       type: Date,
       required: true,
