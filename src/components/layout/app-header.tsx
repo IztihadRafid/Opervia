@@ -152,15 +152,15 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-border/70 bg-background/90 px-3 backdrop-blur-xl sm:px-4">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-[#DC586D]/15 bg-white/95 px-3 backdrop-blur-xl sm:px-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <SidebarTrigger />
 
           <Separator orientation="vertical" className="hidden h-5 sm:block" />
 
           <div className="flex min-w-0 items-center gap-2">
-            <div className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500/15 via-violet-500/15 to-cyan-500/15 ring-1 ring-indigo-500/15 sm:flex">
-              <Building2 className="size-4 text-indigo-600 dark:text-indigo-400" />
+            <div className="hidden size-8 shrink-0 items-center justify-center rounded-lg bg-[#FFF9F7] sm:flex">
+              <Building2 className="size-4 text-[#A33757]" />
             </div>
 
             <div className="min-w-0">
@@ -219,7 +219,7 @@ export function AppHeader() {
             aria-label="Search pages"
             title="Search pages"
             onClick={() => setIsSearchOpen(true)}
-            className="size-9 rounded-xl transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400"
+            className="size-9 rounded-xl text-[#852E4E] transition-colors hover:bg-[#FFF0E8] hover:text-[#4C1D3D]"
           >
             <Search className="size-4" />
           </Button>
@@ -232,12 +232,12 @@ export function AppHeader() {
                 size="icon"
                 aria-label="Recent activity notifications"
                 title="Recent activity"
-                className="relative size-9 rounded-xl transition-colors hover:bg-violet-500/10 hover:text-violet-600 dark:hover:text-violet-400"
+                className="relative size-9 rounded-xl text-[#852E4E] transition-colors hover:bg-[#FFF0E8] hover:text-[#4C1D3D]"
               >
                 <Bell className="size-4" />
 
                 {recentActivities.length > 0 && (
-                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-linear-to-br from-violet-500 to-indigo-500 ring-2 ring-background" />
+                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-[#DC586D] ring-2 ring-white" />
                 )}
               </Button>
             </DropdownMenuTrigger>
@@ -245,7 +245,7 @@ export function AppHeader() {
             <DropdownMenuContent
               align="end"
               sideOffset={10}
-              className="w-[min(360px,calc(100vw-24px))] rounded-2xl border-border/70 p-2 shadow-xl"
+              className="w-[min(360px,calc(100vw-24px))] rounded-2xl border border-[#DC586D]/15 bg-white p-2 text-[#4C1D3D] shadow-xl"
             >
               <DropdownMenuLabel className="px-3 py-2">
                 <div className="flex items-center justify-between gap-3">
@@ -256,7 +256,7 @@ export function AppHeader() {
                     </p>
                   </div>
 
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500/15 via-violet-500/15 to-cyan-500/15 text-indigo-600 dark:text-indigo-400">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-[#FFF0E8] text-[#A33757]">
                     <Activity className="size-4" />
                   </span>
                 </div>
@@ -302,13 +302,13 @@ export function AppHeader() {
                   <DropdownMenuItem
                     key={activity._id}
                     asChild
-                    className="cursor-pointer rounded-xl px-3 py-3 focus:bg-indigo-500/5"
+                    className="cursor-pointer rounded-xl px-3 py-3 focus:bg-[#FFF9F7]"
                   >
                     <Link
                       href="/activity"
                       className="flex w-full items-start gap-3"
                     >
-                      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500/10 to-violet-500/10 text-indigo-600 dark:text-indigo-400">
+                      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#FFF0E8] text-[#A33757]">
                         <Activity className="size-4" />
                       </span>
 
@@ -334,7 +334,7 @@ export function AppHeader() {
               <DropdownMenuItem asChild className="rounded-xl p-0">
                 <Link
                   href="/activity"
-                  className="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-indigo-600 dark:text-indigo-400"
+                  className="flex w-full items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-[#A33757] hover:text-[#4C1D3D]"
                 >
                   View all activity
                   <ChevronRight className="size-4" />
@@ -349,7 +349,7 @@ export function AppHeader() {
 
       {isSearchOpen && (
         <div
-          className="fixed inset-0 z-50 bg-background/60 p-3 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-50 bg-[#4C1D3D]/20 p-3 backdrop-blur-sm sm:p-6"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
               closeSearch();
@@ -365,10 +365,10 @@ export function AppHeader() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="global-search-title"
-            className="mx-auto mt-[10vh] w-full max-w-xl overflow-hidden rounded-2xl border border-border/70 bg-popover shadow-2xl shadow-indigo-950/10"
+            className="mx-auto mt-[10vh] w-full max-w-xl overflow-hidden rounded-2xl border border-[#DC586D]/20 bg-white text-[#4C1D3D] shadow-2xl"
           >
-            <div className="flex items-center gap-3 border-b border-border/70 bg-gradient-to-r from-indigo-500/[0.06] via-violet-500/[0.04] to-cyan-500/[0.06] px-4">
-              <Search className="size-5 shrink-0 text-indigo-500" />
+            <div className="flex items-center gap-3 border-b border-[#DC586D]/15 bg-[#FFF9F7] px-4">
+              <Search className="size-5 shrink-0 text-[#A33757]" />
 
               <label id="global-search-title" className="sr-only">
                 Search workspace pages

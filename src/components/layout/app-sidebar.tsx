@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { mainNavigation, settingsNavigation } from "@/config/navigation";
+import { Boxes } from "lucide-react";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -25,11 +26,13 @@ export function AppSidebar() {
       <SidebarHeader className="h-16 border-b">
         <Link href="/dashboard" className="flex h-full items-center gap-2 px-2">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-sm font-bold">O</span>
+            <span className="text-sm font-bold">
+              <Boxes size={15} />
+            </span>
           </div>
 
           <span className="text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">
-            Opervia
+            OperVia
           </span>
         </Link>
       </SidebarHeader>
@@ -57,7 +60,7 @@ export function AppSidebar() {
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span>{item.title}</span>
+                        <span className="text-[16px]">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -89,7 +92,7 @@ export function AppSidebar() {
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span>{item.title}</span>
+                        <span className="text-[16px]">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

@@ -344,8 +344,7 @@ export default function VendorsPage() {
                     )}
               </p>
             </div>
-
-            <div className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10 text-violet-500">
+            <div className="flex size-11 items-center justify-center rounded-xl bg-[#FFF0E8] text-[#A33757]">
               <Users className="size-5" />
             </div>
           </div>

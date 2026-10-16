@@ -155,7 +155,7 @@ export function DeleteVendorDialog({
             type="button"
             onClick={handleDelete}
             disabled={!isConfirmed || isDeleting}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground transition hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#A33757] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#852E4E] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDeleting ? (
               <>

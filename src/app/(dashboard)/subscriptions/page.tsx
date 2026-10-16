@@ -2,7 +2,6 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-
 import {
   useCreateSubscription,
   useDeleteSubscription,
@@ -13,6 +12,22 @@ import {
   type SubscriptionStatus,
 } from "@/hooks/useSubscriptions";
 import { apiClient } from "@/lib/api-client";
+
+import {
+  CreditCard,
+  Plus,
+  X,
+  CalendarDays,
+  Layers3,
+  Wallet,
+  Search,
+  Filter,
+  RotateCcw,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
 
 type ApplicationOption = {
   _id: string;
@@ -38,10 +53,10 @@ type SubscriptionForm = {
 const PAGE_SIZE = 10;
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-xl border border-[#DC586D]/20 bg-white px-3.5 py-2.5 text-sm text-[#4C1D3D] outline-none transition placeholder:text-[#852E4E]/45 hover:border-[#DC586D]/40 focus:border-[#A33757] focus:ring-4 focus:ring-[#FB9590]/20";
 
 const buttonClass =
-  "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50";
 
 const initialForm: SubscriptionForm = {
   applicationId: "",
@@ -99,15 +114,15 @@ function formatMoney(amount: number, currency: string) {
 function statusClass(status: SubscriptionStatus) {
   switch (status) {
     case "active":
-      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      return "border-[#A33757]/20 bg-[#FFBB94]/30 text-[#852E4E]";
     case "cancelled":
-      return "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400";
+      return "border-[#DC586D]/25 bg-[#DC586D]/10 text-[#A33757]";
     case "expired":
-      return "border-border bg-muted text-muted-foreground";
+      return "border-[#852E4E]/15 bg-[#852E4E]/5 text-[#852E4E]/75";
     case "paused":
-      return "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+      return "border-[#FB9590]/40 bg-[#FB9590]/20 text-[#852E4E]";
     default:
-      return "border-border bg-muted text-muted-foreground";
+      return "border-[#852E4E]/15 bg-[#852E4E]/5 text-[#852E4E]/75";
   }
 }
 
@@ -169,11 +184,8 @@ export default function SubscriptionsPage() {
   const pagination = subscriptionsQuery.data?.pagination;
   const total = pagination?.total ?? 0;
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
-
   const saving = createMutation.isPending || updateMutation.isPending;
   const deleting = deleteMutation.isPending;
-
-  // Keep filters and pagination in the URL so refresh preserves the current view.
   useEffect(() => {
     const params = new URLSearchParams();
 
@@ -202,7 +214,7 @@ export default function SubscriptionsPage() {
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  // Load applications for the create/edit form.
+  // Load applications for the create form.
   useEffect(() => {
     let cancelled = false;
 
@@ -394,29 +406,35 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            Manage your recurring software costs
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Subscriptions
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Track plans, billing cycles, renewal dates, and subscription status.
-          </p>
-        </div>
+      <header className="relative overflow-hidden rounded-3xl border border-[#DC586D]/25 bg-[#FBE7EC] p-5 shadow-sm sm:p-7 lg:p-8">
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#A33757]/20 bg-[#FFF9F7] px-3 py-1.5 text-xs font-semibold text-[#852E4E]">
+              <CreditCard className="size-4" aria-hidden="true" />
+              BILLING MANAGEMENT
+            </div>
 
-        <button
-          type="button"
-          onClick={openCreateDialog}
-          disabled={loadingApplications || applications.length === 0}
-          className={`${buttonClass} bg-primary text-primary-foreground hover:bg-primary/90`}
-        >
-          <span className="mr-2 text-lg leading-none">+</span>
-          Add subscription
-        </button>
-      </div>
+            <h1 className="text-2xl font-bold tracking-tight text-[#4C1D3D] sm:text-3xl">
+              Subscriptions
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4C1D3D]/85 sm:text-base">
+              Manage recurring software costs, billing cycles, renewal dates,
+              and subscription status in one place.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={openCreateDialog}
+            disabled={loadingApplications || applications.length === 0}
+            className={`${buttonClass} shrink-0 bg-[#4C1D3D] text-white shadow-sm hover:bg-[#852E4E]`}
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            Add subscription
+          </button>
+        </div>
+      </header>
 
       {notice && (
         <div
@@ -426,7 +444,6 @@ export default function SubscriptionsPage() {
           {notice}
         </div>
       )}
-
       {deleteError && (
         <div
           role="alert"
@@ -437,270 +454,315 @@ export default function SubscriptionsPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Total subscriptions</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">
+        <div className="relative overflow-hidden rounded-2xl border border-[#DC586D]/15 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#FFBB94]" />
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-[#852E4E]/80">
+              Total subscriptions
+            </p>
+            <div className="rounded-xl bg-[#FFBB94]/30 p-2.5 text-[#852E4E]">
+              <Layers3 className="size-5" aria-hidden="true" />
+            </div>
+          </div>
+          <p className="mt-4 text-3xl font-bold tabular-nums text-[#4C1D3D]">
             {total}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-[#852E4E]/65">
             Across your current filters
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Active on this page</p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">
+        <div className="relative overflow-hidden rounded-2xl border border-[#DC586D]/15 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#DC586D]" />
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-[#852E4E]/80">
+              Active on this page
+            </p>
+            <div className="rounded-xl bg-[#DC586D]/10 p-2.5 text-[#A33757]">
+              <CreditCard className="size-5" aria-hidden="true" />
+            </div>
+          </div>
+          <p className="mt-4 text-3xl font-bold tabular-nums text-[#4C1D3D]">
             {activeCount}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-[#852E4E]/65">
             Currently active subscriptions
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">
-            Estimated monthly spend
-          </p>
-          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">
+        <div className="relative overflow-hidden rounded-2xl border border-[#DC586D]/15 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#A33757]" />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-[#852E4E]/80">
+              Estimated monthly spend
+            </p>
+            <div className="rounded-xl bg-[#A33757]/10 p-2.5 text-[#A33757]">
+              <Wallet className="size-5" aria-hidden="true" />
+            </div>
+          </div>
+          <p className="mt-4 break-words text-2xl font-bold tabular-nums text-[#4C1D3D] sm:text-3xl">
             {formatMoney(monthlySpend, "USD")}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs leading-5 text-[#852E4E]/65">
             Active subscriptions on this page, normalized to monthly cost
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card">
-        <div className="flex flex-col gap-4 border-b border-border p-4 sm:p-5">
-          <div>
-            <h2 className="font-semibold text-foreground">All subscriptions</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Search and filter your subscriptions.
-            </p>
-          </div>
+      <>
+        {/* Heading and filters — separate card */}
+        <div className="mb-5 rounded-2xl border border-[#DC586D]/15 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 p-4 sm:p-6">
+            <div>
+              <h2 className="font-semibold text-[#4C1D3D]">
+                All subscriptions
+              </h2>
+              <p className="mt-1 text-sm text-[#852E4E]/70">
+                Search and filter your subscriptions.
+              </p>
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(200px,1fr)_180px_180px_auto]">
-            <input
-              type="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search plans or applications..."
-              aria-label="Search subscriptions"
-              className={inputClass}
-            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(200px,1fr)_180px_180px_auto]">
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search plans or applications..."
+                aria-label="Search subscriptions"
+                className={inputClass}
+              />
 
-            <select
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Filter by status"
-              className={inputClass}
-            >
-              <option value="">All statuses</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="expired">Expired</option>
-            </select>
+              <select
+                value={statusFilter}
+                onChange={(event) => {
+                  setStatusFilter(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by status"
+                className={inputClass}
+              >
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="expired">Expired</option>
+              </select>
 
-            <select
-              value={billingFilter}
-              onChange={(event) => {
-                setBillingFilter(event.target.value);
-                setPage(1);
-              }}
-              aria-label="Filter by billing cycle"
-              className={inputClass}
-            >
-              <option value="">All billing cycles</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+              <select
+                value={billingFilter}
+                onChange={(event) => {
+                  setBillingFilter(event.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by billing cycle"
+                className={inputClass}
+              >
+                <option value="">All billing cycles</option>
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
 
-            <button
-              type="button"
-              onClick={clearFilters}
-              className={`${buttonClass} border border-border bg-background text-foreground hover:bg-muted`}
-            >
-              Clear filters
-            </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className={`${buttonClass} border border-[#DC586D]/20 bg-white text-[#852E4E] hover:bg-[#FFF9F7]`}
+              >
+                Clear filters
+              </button>
+            </div>
           </div>
         </div>
 
-        {subscriptionsQuery.isError ? (
-          <div className="p-8 text-center">
-            <p className="font-medium text-foreground">
-              Could not load subscriptions
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {getErrorMessage(subscriptionsQuery.error)}
-            </p>
-            <button
-              type="button"
-              onClick={() => void subscriptionsQuery.refetch()}
-              className={`${buttonClass} mt-4 bg-primary text-primary-foreground hover:bg-primary/90`}
-            >
-              Try again
-            </button>
-          </div>
-        ) : subscriptionsQuery.isPending ? (
-          <div className="space-y-3 p-5">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-12 animate-pulse rounded-lg bg-muted"
-              />
-            ))}
-          </div>
-        ) : subscriptions.length === 0 ? (
-          <div className="px-5 py-16 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-xl text-muted-foreground">
-              $
-            </div>
-            <h3 className="mt-4 font-semibold text-foreground">
-              No subscriptions found
-            </h3>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-              {search || statusFilter || billingFilter
-                ? "Try changing your search or filters."
-                : "Add your first subscription to start tracking your software costs."}
-            </p>
-            {!search && !statusFilter && !billingFilter && (
+        {/* Subscription results — separate card */}
+        <div className="overflow-hidden rounded-2xl border border-[#DC586D]/15 bg-white shadow-sm">
+          {subscriptionsQuery.isError ? (
+            <div className="p-8 text-center">
+              <p className="font-medium text-[#4C1D3D]">
+                Could not load subscriptions
+              </p>
+              <p className="mt-2 text-sm text-[#852E4E]/70">
+                {getErrorMessage(subscriptionsQuery.error)}
+              </p>
               <button
                 type="button"
-                onClick={openCreateDialog}
-                disabled={loadingApplications || applications.length === 0}
-                className={`${buttonClass} mt-5 bg-primary text-primary-foreground hover:bg-primary/90`}
+                onClick={() => void subscriptionsQuery.refetch()}
+                className={`${buttonClass} mt-4 bg-[#4C1D3D] text-white hover:bg-[#852E4E]`}
               >
-                Add subscription
+                Try again
               </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm">
-                <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 font-medium">
-                      Application / plan
-                    </th>
-                    <th className="px-5 py-3 font-medium">Amount</th>
-                    <th className="px-5 py-3 font-medium">Billing cycle</th>
-                    <th className="px-5 py-3 font-medium">Next renewal</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 text-right font-medium">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-border">
-                  {subscriptions.map((subscription) => (
-                    <tr
-                      key={subscription._id}
-                      className="transition hover:bg-muted/30"
-                    >
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-foreground">
-                          {subscription.applicationName || "Application"}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {subscription.plan}
-                        </p>
-                      </td>
-
-                      <td className="px-5 py-4 font-medium tabular-nums text-foreground">
-                        {formatMoney(
-                          subscription.amount,
-                          subscription.currency,
-                        )}
-                      </td>
-
-                      <td className="px-5 py-4 capitalize text-muted-foreground">
-                        {subscription.billingCycle}
-                      </td>
-
-                      <td className="px-5 py-4 text-foreground">
-                        {formatDate(subscription.renewalDate)}
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusClass(subscription.status)}`}
-                        >
-                          {subscription.status}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditDialog(subscription)}
-                            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDeleteTarget(subscription);
-                              setDeleteError("");
-                              setNotice("");
-                            }}
-                            disabled={deleting}
-                            className="rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-
-            <div className="flex flex-col gap-3 border-t border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <p className="text-sm text-muted-foreground">
-                Showing {(page - 1) * PAGE_SIZE + 1}–
-                {Math.min(page * PAGE_SIZE, total)} of {total} subscriptions
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1 || subscriptionsQuery.isFetching}
-                  onClick={() => setPage((current) => Math.max(1, current - 1))}
-                  className={`${buttonClass} border border-border bg-background text-foreground hover:bg-muted`}
-                >
-                  Previous
-                </button>
-
-                <span className="px-2 text-sm tabular-nums text-muted-foreground">
-                  {page} / {totalPages}
-                </span>
-
-                <button
-                  type="button"
-                  disabled={page >= totalPages || subscriptionsQuery.isFetching}
-                  onClick={() =>
-                    setPage((current) => Math.min(totalPages, current + 1))
-                  }
-                  className={`${buttonClass} border border-border bg-background text-foreground hover:bg-muted`}
-                >
-                  Next
-                </button>
+          ) : subscriptionsQuery.isPending ? (
+            <div className="space-y-3 p-5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-12 animate-pulse rounded-lg bg-[#FFF9F7]"
+                />
+              ))}
+            </div>
+          ) : subscriptions.length === 0 ? (
+            <div className="px-5 py-16 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[#DC586D]/15 bg-[#FFF9F7] text-xl text-[#A33757]">
+                $
               </div>
+              <h3 className="mt-4 font-semibold text-[#4C1D3D]">
+                No subscriptions found
+              </h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-[#852E4E]/70">
+                {search || statusFilter || billingFilter
+                  ? "Try changing your search or filters."
+                  : "Add your first subscription to start tracking your software costs."}
+              </p>
+              {!search && !statusFilter && !billingFilter && (
+                <button
+                  type="button"
+                  onClick={openCreateDialog}
+                  disabled={loadingApplications || applications.length === 0}
+                  className={`${buttonClass} mt-5 bg-[#4C1D3D] text-white hover:bg-[#852E4E]`}
+                >
+                  Add subscription
+                </button>
+              )}
             </div>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[900px] text-left text-sm">
+                  <thead className="bg-[#FFF9F7] text-xs uppercase tracking-wide text-[#852E4E]">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">
+                        Application / plan
+                      </th>
+                      <th className="px-5 py-3 font-medium">Amount</th>
+                      <th className="px-5 py-3 font-medium">Billing cycle</th>
+                      <th className="px-5 py-3 font-medium">Next renewal</th>
+                      <th className="px-5 py-3 font-medium">Status</th>
+                      <th className="px-5 py-3 text-right font-medium">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-[#DC586D]/10">
+                    {subscriptions.map((subscription) => (
+                      <tr
+                        key={subscription._id}
+                        className="transition-colors hover:bg-[#FFF9F7]"
+                      >
+                        <td className="px-5 py-4">
+                          <p className="font-medium text-[#4C1D3D]">
+                            {subscription.applicationName || "Application"}
+                          </p>
+                          <p className="mt-1 text-xs text-[#852E4E]/70">
+                            {subscription.plan}
+                          </p>
+                        </td>
+
+                        <td className="px-5 py-4 font-medium tabular-nums text-[#4C1D3D]">
+                          {formatMoney(
+                            subscription.amount,
+                            subscription.currency,
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 capitalize text-[#852E4E]/80">
+                          {subscription.billingCycle}
+                        </td>
+
+                        <td className="px-5 py-4 text-[#4C1D3D]">
+                          {formatDate(subscription.renewalDate)}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusClass(subscription.status)}`}
+                          >
+                            {subscription.status}
+                          </span>
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEditDialog(subscription)}
+                              className="rounded-lg border border-[#DC586D]/20 px-3 py-1.5 text-xs font-medium text-[#852E4E] transition hover:bg-[#FFF9F7]"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteTarget(subscription);
+                                setDeleteError("");
+                                setNotice("");
+                              }}
+                              disabled={deleting}
+                              className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-40"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination stays inside the results card */}
+              <div className="flex flex-col gap-4 border-t border-[#DC586D]/15 bg-[#FFF9F7] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <p className="text-sm text-[#852E4E]/75">
+                  Showing{" "}
+                  <span className="font-semibold tabular-nums text-[#4C1D3D]">
+                    {(page - 1) * PAGE_SIZE + 1}–
+                    {Math.min(page * PAGE_SIZE, total)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold tabular-nums text-[#4C1D3D]">
+                    {total}
+                  </span>{" "}
+                  subscriptions
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={page <= 1 || subscriptionsQuery.isFetching}
+                    onClick={() =>
+                      setPage((current) => Math.max(1, current - 1))
+                    }
+                    className={`${buttonClass} border border-[#DC586D]/20 bg-white text-[#852E4E] shadow-sm hover:border-[#A33757]/40 hover:bg-[#FFF0E8] disabled:opacity-40`}
+                  >
+                    Previous
+                  </button>
+
+                  <span className="rounded-xl border border-[#DC586D]/15 bg-white px-3 py-2.5 text-sm font-semibold tabular-nums text-[#4C1D3D]">
+                    {page}
+                    <span className="mx-1.5 text-[#DC586D]">/</span>
+                    {totalPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={
+                      page >= totalPages || subscriptionsQuery.isFetching
+                    }
+                    onClick={() =>
+                      setPage((current) => Math.min(totalPages, current + 1))
+                    }
+                    className={`${buttonClass} border border-[#4C1D3D] bg-[#4C1D3D] text-white shadow-sm hover:bg-[#852E4E] disabled:opacity-40`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </>
 
       {/* Create / edit subscription modal */}
       {dialogOpen && (
@@ -931,7 +993,7 @@ export default function SubscriptionsPage() {
                   disabled={
                     saving || loadingApplications || applications.length === 0
                   }
-                  className={`${buttonClass} bg-primary text-primary-foreground hover:bg-primary/90`}
+                  className={`${buttonClass} text-white bg-[#4C1D3D]  hover:bg-primary/90`}
                 >
                   {saving
                     ? "Saving..."
@@ -944,7 +1006,6 @@ export default function SubscriptionsPage() {
           </div>
         </div>
       )}
-
       {/* Delete confirmation modal */}
       {deleteTarget && (
         <div
@@ -1028,7 +1089,7 @@ export default function SubscriptionsPage() {
                 type="button"
                 disabled={deleting}
                 onClick={() => void confirmDelete()}
-                className={`${buttonClass} bg-destructive text-destructive-foreground hover:bg-destructive/90`}
+                className={`${buttonClass} text-white bg-primary hover:bg-primary/90`}
               >
                 {deleting ? "Deleting..." : "Delete subscription"}
               </button>

@@ -91,9 +91,13 @@ export function CreateOrganizationDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="shrink-0 gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-2 bg-[#fce8e2]"
+        >
           <Plus className="size-4" />
-          <span className="hidden sm:inline">Create organization</span>
+          <span className="hidden sm:inline ">Create organization</span>
           <span className="sm:hidden">Create</span>
         </Button>
       </DialogTrigger>
@@ -129,7 +133,6 @@ export function CreateOrganizationDialog() {
               minLength={2}
               maxLength={100}
               required
-              autoFocus
               disabled={isCreating}
             />
           </div>

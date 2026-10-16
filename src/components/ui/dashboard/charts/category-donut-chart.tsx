@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
+import { BrushCleaning } from "lucide-react";
 
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -16,14 +17,14 @@ interface CategoryDonutChartProps {
 }
 
 const CATEGORY_COLORS = [
-  "#6366f1",
-  "#06b6d4",
-  "#10b981",
-  "#f59e0b",
-  "#ec4899",
-  "#8b5cf6",
-  "#f97316",
-  "#14b8a6",
+  "#852E4E",
+  "#DC586D",
+  "#FB9590",
+  "#A33757",
+  "#FFBB94",
+  "#4C1D3D",
+  "#C96D7D",
+  "#E7A18C",
 ];
 
 export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
@@ -35,13 +36,14 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
       type: "donut",
       fontFamily: "var(--font-jakarta), sans-serif",
       toolbar: { show: false },
-      animations: { enabled: true },
+      animations: { enabled: true, speed: 450 },
+      background: "transparent",
     },
     labels: categories.map((item) => item.name),
     colors: CATEGORY_COLORS,
     stroke: {
-      width: 3,
-      colors: ["var(--card)"],
+      width: 4,
+      colors: ["#FFFFFF"],
     },
     legend: {
       show: false,
@@ -50,30 +52,32 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
       pie: {
         expandOnClick: false,
         donut: {
-          size: "72%",
+          size: "73%",
           labels: {
             show: true,
             name: {
               show: true,
               offsetY: -8,
-              color: "#94a3b8",
+              color: "#775E6A",
               fontSize: "12px",
+              fontWeight: 500,
             },
             value: {
               show: true,
               offsetY: 8,
-              color: "var(--foreground)",
+              color: "#4C1D3D",
               fontSize: "24px",
               fontWeight: 600,
-              formatter: (value) => String(value),
+              formatter: (value) => Number(value).toLocaleString(),
             },
             total: {
               show: true,
               showAlways: true,
               label: "Applications",
-              color: "#94a3b8",
+              color: "#775E6A",
               fontSize: "12px",
-              formatter: () => String(total),
+              fontWeight: 500,
+              formatter: () => total.toLocaleString(),
             },
           },
         },
@@ -83,9 +87,14 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
       enabled: false,
     },
     tooltip: {
-      theme: "dark",
+      theme: "light",
+      style: {
+        fontSize: "12px",
+        fontFamily: "var(--font-jakarta), sans-serif",
+      },
       y: {
-        formatter: (value) => `${value} application${value === 1 ? "" : "s"}`,
+        formatter: (value) =>
+          `${value.toLocaleString()} application${value === 1 ? "" : "s"}`,
       },
     },
     states: {
@@ -103,6 +112,13 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
           chart: {
             width: "100%",
           },
+          plotOptions: {
+            pie: {
+              donut: {
+                size: "70%",
+              },
+            },
+          },
         },
       },
     ],
@@ -110,14 +126,25 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
 
   if (categories.length === 0) {
     return (
-      <div className="flex h-[260px] items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-        No category data available.
+      <div className="flex min-h-[260px] flex-col items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/10 px-5 text-center">
+        <div
+          aria-hidden="true"
+          className="mb-3 flex size-10 items-center justify-center rounded-full bg-[#852E4E]/[0.08] text-[#852E4E]"
+        >
+          <BrushCleaning />
+        </div>
+        <p className="text-sm font-medium text-foreground">
+          No category data yet
+        </p>
+        <p className="mt-1 max-w-xs text-xs leading-5 text-muted-foreground">
+          Category distribution will appear when applications have categories.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid items-center gap-5 sm:grid-cols-2">
+    <div className="grid min-w-0 items-center gap-5 sm:grid-cols-2">
       <div
         className="mx-auto w-full max-w-[280px]"
         role="img"
@@ -134,33 +161,33 @@ export function CategoryDonutChart({ data, total }: CategoryDonutChartProps) {
         />
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         {categories.map((item, index) => {
           const percentage =
             chartTotal > 0 ? Math.round((item.count / chartTotal) * 100) : 0;
+          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 
           return (
             <div
               key={item.name}
-              className="flex items-center justify-between gap-3"
+              className="flex min-w-0 items-center justify-between gap-3"
             >
               <div className="flex min-w-0 items-center gap-2.5">
                 <span
-                  className="h-3 w-3 shrink-0 rounded-sm"
-                  style={{
-                    backgroundColor:
-                      CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-                  }}
+                  className="size-2.5 shrink-0 rounded-sm"
+                  style={{ backgroundColor: color }}
                   aria-hidden="true"
                 />
-                <span className="truncate text-sm">{item.name}</span>
+                <span className="truncate text-sm text-foreground">
+                  {item.name}
+                </span>
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <span className="text-sm font-medium tabular-nums">
-                  {item.count}
+                <span className="text-sm font-semibold tabular-nums text-foreground">
+                  {item.count.toLocaleString()}
                 </span>
-                <span className="w-10 text-right text-xs text-muted-foreground tabular-nums">
+                <span className="w-10 text-right text-xs tabular-nums text-muted-foreground">
                   {percentage}%
                 </span>
               </div>

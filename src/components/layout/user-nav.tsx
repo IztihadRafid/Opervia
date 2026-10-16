@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export function UserNav() {
   const { data: session } = useSession();
@@ -61,15 +62,18 @@ export function UserNav() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem>
-          <User className="mr-2 size-4" />
-          Profile
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <Settings className="mr-2 size-4" />
-          Settings
-        </DropdownMenuItem>
+        <Link href="/settings">
+          <DropdownMenuItem>
+            <User className="mr-2 size-4" />
+            Profile
+          </DropdownMenuItem>
+        </Link>
+        <Link href="/settings">
+          <DropdownMenuItem>
+            <Settings className="mr-2 size-4" />
+            Settings
+          </DropdownMenuItem>
+        </Link>
 
         <DropdownMenuSeparator />
 
