@@ -13,21 +13,7 @@ import {
 } from "@/hooks/useSubscriptions";
 import { apiClient } from "@/lib/api-client";
 
-import {
-  CreditCard,
-  Plus,
-  X,
-  CalendarDays,
-  Layers3,
-  Wallet,
-  Search,
-  Filter,
-  RotateCcw,
-  Pencil,
-  Trash2,
-  AlertTriangle,
-  RefreshCw,
-} from "lucide-react";
+import { CreditCard, Plus, Layers3, Wallet, Trash2 } from "lucide-react";
 
 type ApplicationOption = {
   _id: string;
@@ -1024,21 +1010,7 @@ export default function SubscriptionsPage() {
             className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-foreground shadow-xl"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6"
-                aria-hidden="true"
-              >
-                <path d="M3 6h18" />
-                <path d="M8 6V4h8v2" />
-                <path d="m19 6-1 14H6L5 6" />
-                <path d="M10 11v5M14 11v5" />
-              </svg>
+              <Trash2 className="h-6 w-6" aria-hidden="true" />
             </div>
 
             <h2
