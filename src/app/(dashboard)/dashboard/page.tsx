@@ -11,7 +11,10 @@ import { SpendingChart } from "@/components/ui/dashboard/charts/spending-chart";
 import { SubscriptionAnalytics } from "@/components/ui/dashboard/subscription-analytics";
 import { ActivityPreview } from "@/components/ui/activity/activity-preview";
 import { useDashboard, type DashboardRange } from "@/hooks/use-dashboard";
+import { ExpenseStatusDonutChart } from "@/components/ui/dashboard/charts/expense-status-donut-chart";
+
 import type { DashboardMetric } from "../../../../types/dashboard";
+import { ExpenseCategoryDonutChart } from "@/components/ui/dashboard/charts/expense-category-donut-chart";
 
 const RANGE_OPTIONS: { value: DashboardRange; label: string }[] = [
   { value: "7d", label: "7 Days" },
@@ -55,7 +58,7 @@ export default function DashboardPage() {
     {
       title: "Monthly Spend",
       value: `$${monthlySpend?.toLocaleString() ?? "0"}`,
-      description: "Normalized monthly recurring spend",
+      description: "Normalized monthly active recurring spend",
     },
     {
       title: "Active Users",
@@ -206,6 +209,71 @@ export default function DashboardPage() {
           </section>
         </div>
       </section>
+
+      {/* Expense analytics */}
+      {data?.expenses && (
+        <section aria-label="Expense analytics" className="space-y-4">
+          <div>
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
+              Expense insights
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Understand expense status and how your expenses are distributed
+              across categories.
+            </p>
+          </div>
+
+          <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+            <section
+              aria-labelledby="expense-status-title"
+              className="min-w-0 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-6"
+            >
+              <div>
+                <h3
+                  id="expense-status-title"
+                  className="font-semibold tracking-tight text-foreground"
+                >
+                  Expense status
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Recorded expenses by payment status.
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <ExpenseStatusDonutChart
+                  data={data.expenses.statuses}
+                  total={data.expenses.total}
+                />
+              </div>
+            </section>
+
+            <section
+              aria-labelledby="expense-category-title"
+              className="min-w-0 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-6"
+            >
+              <div>
+                <h3
+                  id="expense-category-title"
+                  className="font-semibold tracking-tight text-foreground"
+                >
+                  Expense categories
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  See how recorded expenses are distributed across categories.
+                </p>
+              </div>
+
+              <div className="mt-5">
+                <ExpenseCategoryDonutChart
+                  data={data.expenses.categories}
+                  total={data.expenses.total}
+                />
+              </div>
+            </section>
+          </div>
+        </section>
+      )}
 
       {/* Application analytics */}
       {data?.applications && (

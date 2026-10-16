@@ -8,6 +8,7 @@ import Membership from "@/lib/db/models/Membership";
 import User from "@/lib/db/models/User";
 import Subscription from "@/lib/db/models/Subscription";
 import Vendor from "@/lib/db/models/Vendor";
+import Expense from "@/lib/db/models/Expense";
 export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
 
 export interface DashboardSpendingPoint {
@@ -67,6 +68,29 @@ export interface DashboardRenewalIntelligence {
     category: "expired" | "this_week" | "this_month" | "next_month";
   }[];
 }
+export interface DashboardExpenseStatus {
+  status: "paid" | "pending" | "overdue" | "cancelled";
+  count: number;
+  amountsByCurrency: {
+    currency: string;
+    amount: number;
+  }[];
+}
+
+export interface DashboardExpenseCategory {
+  category: string;
+  count: number;
+  amountsByCurrency: {
+    currency: string;
+    amount: number;
+  }[];
+}
+
+export interface DashboardExpenseAnalytics {
+  total: number;
+  statuses: DashboardExpenseStatus[];
+  categories: DashboardExpenseCategory[];
+}
 export interface DashboardMetrics {
   applications: number;
   monthlySpend: number;
@@ -84,6 +108,7 @@ export interface DashboardData {
 
   subscriptions: DashboardSubscriptionAnalytics;
   applications: DashboardApplicationAnalytics;
+  expenses: DashboardExpenseAnalytics;
   renewals: DashboardRenewalIntelligence;
 }
 
@@ -784,6 +809,130 @@ async function getApplicationAnalytics(
     userCountDistribution,
   };
 }
+async function getExpenseAnalytics(
+  organizationId: string,
+): Promise<DashboardExpenseAnalytics> {
+  const statuses: DashboardExpenseStatus["status"][] = [
+    "paid",
+    "pending",
+    "overdue",
+    "cancelled",
+  ];
+
+  const [result] = await Expense.aggregate<{
+    total: { count: number }[];
+    statuses: {
+      _id: {
+        status: DashboardExpenseStatus["status"];
+        currency: string;
+      };
+      count: number;
+      amount: number;
+    }[];
+    categories: {
+      _id: {
+        category: string;
+        currency: string;
+      };
+      count: number;
+      amount: number;
+    }[];
+  }>([
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+      },
+    },
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        statuses: [
+          {
+            $group: {
+              _id: {
+                status: "$status",
+                currency: "$currency",
+              },
+              count: { $sum: 1 },
+              amount: { $sum: "$amount" },
+            },
+          },
+        ],
+        categories: [
+          {
+            $group: {
+              _id: {
+                category: "$category",
+                currency: "$currency",
+              },
+              count: { $sum: 1 },
+              amount: { $sum: "$amount" },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const statusMap = new Map<
+    DashboardExpenseStatus["status"],
+    DashboardExpenseStatus
+  >(
+    statuses.map((status) => [
+      status,
+      {
+        status,
+        count: 0,
+        amountsByCurrency: [],
+      },
+    ]),
+  );
+
+  for (const item of result?.statuses ?? []) {
+    const entry = statusMap.get(item._id.status);
+
+    if (!entry) {
+      continue;
+    }
+
+    entry.count += item.count;
+    entry.amountsByCurrency.push({
+      currency: item._id.currency,
+      amount: item.amount,
+    });
+  }
+
+  const categoryMap = new Map<string, DashboardExpenseCategory>();
+
+  for (const item of result?.categories ?? []) {
+    const category = item._id.category;
+    let entry = categoryMap.get(category);
+
+    if (!entry) {
+      entry = {
+        category,
+        count: 0,
+        amountsByCurrency: [],
+      };
+
+      categoryMap.set(category, entry);
+    }
+
+    entry.count += item.count;
+    entry.amountsByCurrency.push({
+      currency: item._id.currency,
+      amount: item.amount,
+    });
+  }
+
+  return {
+    total: result?.total[0]?.count ?? 0,
+    statuses: Array.from(statusMap.values()),
+    categories: Array.from(categoryMap.values()).sort(
+      (a, b) => b.count - a.count,
+    ),
+  };
+}
 
 export async function getDashboardData(
   organizationId: string,
@@ -796,6 +945,7 @@ export async function getDashboardData(
     subscriptions,
     applicationAnalytics,
     renewalIntelligence,
+    expenseAnalytics,
   ] = await Promise.all([
     getMonthlySpend(organizationId),
     Membership.aggregate<{ count: number }>([
@@ -826,6 +976,7 @@ export async function getDashboardData(
     getSubscriptionAnalytics(organizationId),
     getApplicationAnalytics(organizationId),
     getRenewalIntelligence(organizationId),
+    getExpenseAnalytics(organizationId),
   ]);
 
   return {
@@ -842,5 +993,6 @@ export async function getDashboardData(
     subscriptions,
     applications: applicationAnalytics,
     renewals: renewalIntelligence,
+    expenses: expenseAnalytics,
   };
 }

@@ -1,9 +1,12 @@
 "use client";
+
 import { useOrganization } from "@/components/providers/organization-provider";
-import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query-keys";
-export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
 import { apiClient } from "@/lib/api-client";
+import { queryKeys } from "@/lib/query-keys";
+import { useQuery } from "@tanstack/react-query";
+
+export type DashboardRange = "7d" | "30d" | "90d" | "6m" | "12m";
+
 interface DashboardSpendingPoint {
   label: string;
   amount: number;
@@ -49,6 +52,30 @@ interface DashboardRenewalIntelligence {
   }[];
 }
 
+interface DashboardExpenseStatus {
+  status: "paid" | "pending" | "overdue" | "cancelled";
+  count: number;
+  amountsByCurrency: {
+    currency: string;
+    amount: number;
+  }[];
+}
+
+interface DashboardExpenseCategory {
+  category: string;
+  count: number;
+  amountsByCurrency: {
+    currency: string;
+    amount: number;
+  }[];
+}
+
+interface DashboardExpenseAnalytics {
+  total: number;
+  statuses: DashboardExpenseStatus[];
+  categories: DashboardExpenseCategory[];
+}
+
 interface DashboardResponse {
   success: boolean;
 
@@ -83,6 +110,8 @@ interface DashboardResponse {
   applications: DashboardApplicationAnalytics;
 
   renewals: DashboardRenewalIntelligence;
+
+  expenses: DashboardExpenseAnalytics;
 }
 
 async function fetchDashboard(
