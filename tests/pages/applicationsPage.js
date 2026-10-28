@@ -60,4 +60,53 @@ export class ApplicationsPage {
     );
     await this.page.waitForTimeout(3000);
   }
+
+  // creating application
+  async openCreateForm() {
+    await this.page
+      .getByRole("button", { name: "Add application" })
+      .first()
+      .click();
+
+    await expect(
+      this.page.getByRole("heading", {
+        name: "Add an application",
+        exact: true,
+      }),
+    ).toBeVisible();
+  }
+
+  async fillCreateForm({ name }) {
+    await this.page.getByPlaceholder("e.g. Slack").fill(name);
+    await this.page.locator("(//select)[2]").selectOption({ label: "ASUS" });
+    await this.page
+      .locator("(//select)[3]")
+      .selectOption({ label: "Hardware" });
+  }
+
+  async submitCreateForm() {
+    await this.page.getByRole("button", { name: "Create application" }).click();
+  }
+
+  async editApplication({ currentName, updatedName }) {
+    await this.page
+      .locator(`(//button[@aria-label='Edit ${currentName}'])[1]`)
+      .click();
+    await this.page.getByPlaceholder("e.g. Slack").fill(updatedName);
+    await this.page
+      .locator("(//select)[2]")
+      .selectOption({ label: "Dell Technologies" });
+    await this.page
+      .locator("(//select)[4]")
+      .selectOption({ label: "Inactive" });
+    await this.page
+      .getByPlaceholder("What is this application used for?")
+      .fill("edited data");
+    await this.page
+      .getByRole("button", {
+        name: "Save changes",
+        exact: true,
+      })
+      .click();
+  }
 }
