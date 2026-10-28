@@ -45,3 +45,5 @@ next-env.d.ts
 .cursor/
 .claude/
 .devin
+AGENTS.md
+README.local.md
