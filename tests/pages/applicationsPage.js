@@ -109,4 +109,29 @@ export class ApplicationsPage {
       })
       .click();
   }
+
+  async deleteApplication(applicationName) {
+    await this.page
+      .locator(`(//button[@aria-label='Delete ${applicationName}'])[1]`)
+      .click();
+
+    await expect(
+      this.page.getByRole("heading", {
+        name: "Delete application?",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await this.page
+      .getByRole("button", {
+        name: "Delete application",
+        exact: true,
+      })
+      .click();
+    await expect(
+      this.page
+        .getByRole("row")
+        .filter({ has: this.page.getByText(applicationName, { exact: true }) }),
+    ).toHaveCount(0, { timeout: 15000 });
+  }
 }
